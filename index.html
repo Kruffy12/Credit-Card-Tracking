@@ -1163,7 +1163,7 @@ textarea.input-field {
           <option value="monthly">Monthly</option>
           <option value="yearly">Yearly</option>
         </select>
-        <input class="input-field" type="date" id="subRenewal" />
+        <input class="input-field" type="date" id="subRenewal" required data-placeholder="Next Renewal Date" style="font-family: var(--sans); color: var(--muted);" onchange="this.style.color = this.value ? 'var(--text)' : 'var(--muted)';" />
         <button class="btn btn-green" id="subAddBtn">Add Subscription</button>
       </div>
 
