@@ -1,0 +1,2044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Pool Card</title>
+
+  <!-- ── iOS PWA ── -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Pool Card" />
+  <meta name="theme-color" content="#0A0A0F" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230A0A0F'/%3E%3Crect x='24' y='60' width='132' height='80' rx='12' fill='none' stroke='%2300E5C0' stroke-width='5'/%3E%3Crect x='24' y='82' width='132' height='18' fill='%2300E5C0' opacity='0.15'/%3E%3Ccircle cx='130' cy='100' r='14' fill='none' stroke='%2300E5C0' stroke-width='4'/%3E%3Ccircle cx='145' cy='100' r='14' fill='none' stroke='%2300E5C0' stroke-width='4' opacity='0.5'/%3E%3C/svg%3E" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+
+  <style>
+/* ═══════════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════════ */
+:root {
+  --void:       #0A0A0F;
+  --surface:    #111118;
+  --card:       #1C1C28;
+  --card2:      #22222F;
+  --border:     #2A2A3A;
+  --border2:    #333348;
+  --teal:       #00E5C0;
+  --teal-dim:   rgba(0,229,192,0.08);
+  --teal-mid:   rgba(0,229,192,0.22);
+  --teal-glow:  rgba(0,229,192,0.12);
+  --green:      #2DDE98;
+  --green-dim:  rgba(45,222,152,0.10);
+  --warn:       #FF6B6B;
+  --warn-dim:   rgba(255,107,107,0.10);
+  --warn-mid:   rgba(255,107,107,0.22);
+  --amber:      #FFB648;
+  --amber-dim:  rgba(255,182,72,0.10);
+  --muted:      #4E4E66;
+  --soft:       #8888A4;
+  --text:       #E8E8F2;
+  --text2:      #BCBCD0;
+  --mono:       'JetBrains Mono', monospace;
+  --sans:       'Inter', system-ui, sans-serif;
+  --r-sm:       10px;
+  --r-md:       14px;
+  --r-lg:       20px;
+  --safe-top:   env(safe-area-inset-top, 0px);
+  --safe-bot:   env(safe-area-inset-bottom, 0px);
+  --safe-l:     env(safe-area-inset-left, 0px);
+  --safe-r:     env(safe-area-inset-right, 0px);
+  --tab-h:      64px;
+}
+
+/* ═══════════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  background: var(--void);
+  height: 100%;
+}
+
+body {
+  font-family: var(--sans);
+  color: var(--text);
+  background: var(--void);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  /* Full-bleed layout: header + banners + tab-content + tab-bar */
+  display: flex;
+  flex-direction: column;
+}
+
+/* ═══════════════════════════════════════════════
+   LAYOUT SHELL
+═══════════════════════════════════════════════ */
+#appShell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+/* ── App Header ── */
+#appHeader {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--void);
+  padding: calc(var(--safe-top) + 14px) calc(var(--safe-r) + 16px) 12px calc(var(--safe-l) + 16px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.app-name {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--teal);
+  letter-spacing: 0.06em;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header-date {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+.sync-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: background 0.3s;
+  flex-shrink: 0;
+}
+.sync-dot.syncing { background: var(--amber); animation: pulse 1s infinite; }
+.sync-dot.synced  { background: var(--teal); }
+.sync-dot.error   { background: var(--warn); }
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ── Banner Area ── */
+#bannerArea {
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+#bannerArea.has-banners {
+  max-height: 400px;
+  padding: 10px 16px 0;
+}
+
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--card);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  border-left: 3px solid var(--amber);
+  animation: bannerIn 0.2s ease;
+}
+.banner.banner-warn  { border-color: var(--warn); }
+.banner.banner-info  { border-color: var(--teal); }
+.banner-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text2);
+  flex: 1;
+}
+.banner-text strong { color: var(--text); font-weight: 600; }
+
+@keyframes bannerIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Tab Content Scroll Area ── */
+#tabViewport {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.tab-pane {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px calc(var(--safe-r) + 16px) calc(var(--safe-bot) + var(--tab-h) + 24px) calc(var(--safe-l) + 16px);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(20px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+.tab-pane.active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+
+/* ── Bottom Tab Bar ── */
+#tabBar {
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  z-index: 100;
+  background: rgba(10,10,15,0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  padding-bottom: var(--safe-bot);
+  display: flex;
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: var(--tab-h);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: color 0.18s;
+  position: relative;
+}
+.tab-btn .tab-icon { transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1); }
+.tab-btn.active { color: var(--teal); }
+.tab-btn.active .tab-icon { transform: translateY(-2px) scale(1.08); }
+.tab-label { font-size: 10px; font-weight: 600; letter-spacing: 0.04em; }
+
+.tab-pip {
+  position: absolute;
+  top: 8px;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--warn);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.tab-pip.show { opacity: 1; }
+
+/* ═══════════════════════════════════════════════
+   SHARED COMPONENT STYLES
+═══════════════════════════════════════════════ */
+.eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 20px 0 10px;
+}
+.section-title { font-size: 13px; font-weight: 600; color: var(--soft); }
+.section-badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 2px 8px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px 18px 16px;
+  margin-bottom: 12px;
+}
+.card-sm {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+
+.input-field {
+  width: 100%;
+  background: var(--void);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 11px 13px;
+  font-family: var(--mono);
+  font-size: 15px;
+  color: var(--text);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color 0.2s;
+  margin-bottom: 8px;
+}
+.input-field:focus { border-color: var(--teal); }
+.input-field::placeholder { color: var(--muted); font-family: var(--sans); font-size: 14px; }
+.input-field.sans { font-family: var(--sans); font-size: 14px; }
+
+select.input-field {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235A5A72' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 34px;
+  cursor: pointer;
+  color: var(--text);
+}
+select.input-field option { background: #1C1C28; }
+
+.btn {
+  display: block; width: 100%;
+  padding: 13px 16px;
+  border-radius: var(--r-sm);
+  border: none;
+  font-family: var(--sans);
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  transition: opacity 0.15s, transform 0.12s;
+}
+.btn:active:not(:disabled) { transform: scale(0.97); opacity: 0.85; }
+.btn:disabled { opacity: 0.28; pointer-events: none; cursor: default; }
+
+.btn-teal  { background: var(--teal);  color: #000; }
+.btn-green { background: var(--green); color: #000; }
+.btn-warn  { background: var(--warn);  color: #fff; }
+.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--soft); }
+.btn-danger { background: transparent; border: 1px solid var(--warn); color: var(--warn); }
+.btn-sm { padding: 9px 14px; font-size: 12px; }
+
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.action-icon {
+  width: 22px; height: 22px;
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.icon-teal  { background: var(--teal-dim); }
+.icon-warn  { background: var(--warn-dim); }
+.icon-green { background: var(--green-dim); }
+.icon-amber { background: var(--amber-dim); }
+
+.card-label-row {
+  display: flex; align-items: center; gap: 7px;
+  margin-bottom: 12px;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--muted);
+}
+.empty-state svg { opacity: 0.25; margin-bottom: 12px; }
+.empty-state p { font-size: 13px; line-height: 1.6; }
+
+/* Pill history */
+.pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.pill {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  animation: fadeIn 0.2s ease;
+}
+.pill-teal  { color: var(--teal);  background: var(--teal-dim);  border: 1px solid var(--teal-mid); }
+.pill-warn  { color: var(--warn);  background: var(--warn-dim);  border: 1px solid var(--warn-mid); }
+
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+/* ═══════════════════════════════════════════════
+   TAB 1 — POOL
+═══════════════════════════════════════════════ */
+
+/* Hero pool card */
+.pool-hero {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 26px 22px 20px;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.pool-hero::before {
+  content: '';
+  position: absolute;
+  top: -70px; right: -70px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, var(--teal-glow) 0%, transparent 65%);
+  pointer-events: none;
+  transition: background 0.4s;
+}
+.pool-hero.danger::before {
+  background: radial-gradient(circle, rgba(255,107,107,0.15) 0%, transparent 65%);
+}
+
+.pool-amount {
+  font-family: var(--mono);
+  font-size: clamp(46px, 13vw, 64px);
+  font-weight: 700;
+  color: var(--teal);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  cursor: default;
+  -webkit-user-select: none; user-select: none;
+  transition: color 0.3s;
+}
+.pool-amount .cur {
+  font-size: 0.38em; font-weight: 400;
+  vertical-align: super; margin-right: 3px; opacity: 0.6;
+}
+.pool-amount.danger { color: var(--warn); }
+.pool-amount.zero   { color: var(--muted); }
+
+@keyframes rollUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.pool-amount.anim { animation: rollUp 0.3s cubic-bezier(0.4,0,0.2,1); }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-top: 18px;
+}
+.stat-box {
+  background: var(--void);
+  border-radius: var(--r-sm);
+  padding: 9px 10px;
+}
+.stat-val {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.stat-val.c-teal  { color: var(--teal); }
+.stat-val.c-warn  { color: var(--warn); }
+.stat-val.c-amber { color: var(--amber); }
+
+.progress-wrap { margin-top: 16px; }
+.progress-track {
+  height: 3px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--teal);
+  transition: width 0.55s cubic-bezier(0.4,0,0.2,1), background 0.3s;
+  max-width: 100%;
+}
+.progress-fill.danger { background: var(--warn); }
+.progress-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+}
+
+/* Swipe list */
+.swipe-list { display: flex; flex-direction: column; gap: 7px; }
+.swipe-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 11px 14px;
+  display: flex; align-items: center; gap: 11px;
+  animation: slideIn 0.22s ease;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.swipe-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--warn);
+  flex-shrink: 0;
+}
+.swipe-name {
+  font-size: 14px; font-weight: 500; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.swipe-time { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.swipe-cost {
+  font-family: var(--mono);
+  font-size: 14px; font-weight: 600;
+  color: var(--warn); flex-shrink: 0;
+}
+.icon-btn {
+  background: none; border: none;
+  padding: 5px; cursor: pointer;
+  color: var(--muted); flex-shrink: 0;
+  touch-action: manipulation;
+  transition: color 0.15s;
+}
+.icon-btn:active { color: var(--warn); }
+
+/* Settle card */
+.settle-summary {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--void);
+  border-radius: var(--r-sm);
+  padding: 11px 14px;
+  margin: 12px 0;
+}
+.settle-lbl { font-size: 13px; color: var(--soft); }
+.settle-val { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--warn); }
+
+/* ═══════════════════════════════════════════════
+   TAB 2 — SUBS
+═══════════════════════════════════════════════ */
+.burden-card {
+  background: linear-gradient(135deg, #1A1A28 0%, #1C2030 100%);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-lg);
+  padding: 22px 20px 18px;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.burden-card::after {
+  content: '';
+  position: absolute;
+  bottom: -50px; left: -50px;
+  width: 160px; height: 160px;
+  background: radial-gradient(circle, var(--green-dim) 0%, transparent 70%);
+  pointer-events: none;
+}
+.burden-amount {
+  font-family: var(--mono);
+  font-size: clamp(36px, 10vw, 50px);
+  font-weight: 700;
+  color: var(--green);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin-top: 6px;
+}
+.burden-amount .cur {
+  font-size: 0.38em; font-weight: 400;
+  vertical-align: super; margin-right: 3px; opacity: 0.6;
+}
+.sub-meta-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.sub-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 13px 15px;
+  display: flex; align-items: center; gap: 12px;
+  animation: slideIn 0.22s ease;
+}
+.sub-icon-wrap {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: var(--green-dim);
+  border: 1px solid rgba(45,222,152,0.18);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+.sub-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.sub-detail { font-size: 11px; color: var(--soft); margin-top: 2px; }
+.sub-right { margin-left: auto; text-align: right; flex-shrink: 0; }
+.sub-cost { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--green); }
+.sub-cycle { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+.renewal-badge {
+  display: inline-block;
+  font-size: 10px; font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  margin-top: 4px;
+  letter-spacing: 0.03em;
+}
+.badge-soon  { background: var(--warn-dim);  color: var(--warn);  border: 1px solid var(--warn-mid); }
+.badge-near  { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,182,72,0.2); }
+.badge-ok    { background: var(--teal-dim);  color: var(--teal);  border: 1px solid var(--teal-mid); }
+
+/* ═══════════════════════════════════════════════
+   TAB 3 — SETTINGS
+═══════════════════════════════════════════════ */
+.settings-group {
+  margin-bottom: 24px;
+}
+.settings-group-title {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  padding-left: 2px;
+}
+.setting-row {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 13px 16px;
+  margin-bottom: 8px;
+}
+.setting-row-top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+}
+.setting-label { font-size: 14px; font-weight: 500; color: var(--text); }
+.setting-sublabel { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+.setting-input-wrap { margin-top: 10px; }
+
+.toggle {
+  width: 42px; height: 24px;
+  border-radius: 99px;
+  background: var(--border2);
+  position: relative; flex-shrink: 0;
+  cursor: pointer; border: none;
+  transition: background 0.2s;
+}
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--soft);
+  transition: transform 0.2s, background 0.2s;
+}
+.toggle.on { background: var(--teal-mid); }
+.toggle.on::after { transform: translateX(18px); background: var(--teal); }
+
+.status-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600;
+  color: var(--muted);
+}
+.status-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--muted);
+}
+.status-badge.connected .dot { background: var(--teal); }
+.status-badge.connected { color: var(--teal); }
+.status-badge.error .dot { background: var(--warn); }
+.status-badge.error { color: var(--warn); }
+
+.export-box {
+  background: var(--void);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--soft);
+  word-break: break-all;
+  max-height: 80px;
+  overflow-y: auto;
+  margin-bottom: 8px;
+}
+
+/* ═══════════════════════════════════════════════
+   OVERLAY
+═══════════════════════════════════════════════ */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex; align-items: flex-end;
+  padding: 16px;
+  padding-bottom: calc(var(--safe-bot) + 16px);
+  z-index: 500;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s;
+}
+.overlay.show { opacity: 1; pointer-events: auto; }
+.overlay-sheet {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 24px;
+  width: 100%;
+  transform: translateY(24px);
+  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+.overlay.show .overlay-sheet { transform: translateY(0); }
+.overlay-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+.overlay-body  { font-size: 14px; color: var(--soft); line-height: 1.55; margin-bottom: 20px; }
+.overlay-val   { font-family: var(--mono); font-weight: 700; color: var(--warn); }
+
+/* ═══════════════════════════════════════════════
+   AUTH SCREEN
+═══════════════════════════════════════════════ */
+#authScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: var(--void);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--safe-top) + 24px) 28px calc(var(--safe-bot) + 24px);
+  transition: opacity 0.3s ease;
+}
+#authScreen.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.auth-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+.auth-logo-mark {
+  width: 64px; height: 64px;
+  border-radius: 18px;
+  background: var(--card);
+  border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+}
+.auth-title {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--teal);
+  letter-spacing: 0.08em;
+}
+.auth-sub {
+  font-size: 13px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 360px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 24px 22px;
+}
+
+.auth-mode-label {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.auth-mode-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.auth-error {
+  font-size: 12px;
+  color: var(--warn);
+  background: var(--warn-dim);
+  border: 1px solid var(--warn-mid);
+  border-radius: var(--r-sm);
+  padding: 9px 12px;
+  margin-bottom: 12px;
+  display: none;
+  line-height: 1.4;
+}
+.auth-error.show { display: block; }
+
+.auth-toggle {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.auth-toggle button {
+  background: none;
+  border: none;
+  color: var(--teal);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 2px;
+  touch-action: manipulation;
+}
+
+.btn-loading {
+  position: relative;
+  color: transparent !important;
+}
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 16px; height: 16px;
+  border: 2px solid rgba(0,0,0,0.3);
+  border-top-color: #000;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+.btn-teal.btn-loading::after { border-color: rgba(0,0,0,0.2); border-top-color: #000; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Sign-out button in header */
+#signOutBtn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  display: none;
+}
+#signOutBtn:active { color: var(--warn); border-color: var(--warn); }
+
+/* ═══════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════ */
+.toast {
+  position: fixed;
+  bottom: calc(var(--safe-bot) + var(--tab-h) + 16px);
+  left: 50%; transform: translateX(-50%) translateY(10px);
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-size: 13px; font-weight: 500;
+  padding: 10px 18px;
+  border-radius: 99px;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 999;
+  max-width: calc(100vw - 40px);
+  text-align: center;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+
+<body>
+<div id="appShell">
+
+  <!-- ══ APP HEADER ══════════════════════════════════════ -->
+  <header id="appHeader">
+    <div class="app-logo">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+        <rect x="2" y="8" width="22" height="14" rx="3.5" stroke="#00E5C0" stroke-width="1.6"/>
+        <rect x="2" y="12" width="22" height="3.5" fill="#00E5C0" opacity="0.12"/>
+        <circle cx="19" cy="15.5" r="3" stroke="#00E5C0" stroke-width="1.3"/>
+        <circle cx="21.5" cy="15.5" r="3" stroke="#00E5C0" stroke-width="1.3" opacity="0.35"/>
+        <path d="M7 6V4M13 5V3" stroke="#00E5C0" stroke-width="1.3" stroke-linecap="round" opacity="0.4"/>
+      </svg>
+      <span class="app-name">POOL CARD</span>
+    </div>
+    <div class="header-right">
+      <span class="header-date" id="headerDate"></span>
+      <div class="sync-dot" id="syncDot" title="Sync status"></div>
+      <button id="signOutBtn" aria-label="Sign out">Sign out</button>
+    </div>
+  </header>
+
+  <!-- ══ SMART BANNERS ══════════════════════════════════ -->
+  <div id="bannerArea"></div>
+
+  <!-- ══ TAB VIEWPORT ══════════════════════════════════ -->
+  <div id="tabViewport">
+
+    <!-- ─── TAB: POOL ─────────────────────────────────── -->
+    <div class="tab-pane active" id="pane-pool">
+
+      <!-- Pool Hero -->
+      <div class="pool-hero" id="poolCard">
+        <div class="eyebrow" style="margin-bottom:8px;">Available Spending Pool</div>
+        <div class="pool-amount" id="poolAmount">
+          <span class="cur">BZD</span><span id="poolNum">0.00</span>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="eyebrow">Loaded</div>
+            <div class="stat-val c-teal" id="statLoaded">$0.00</div>
+          </div>
+          <div class="stat-box">
+            <div class="eyebrow">Swipes</div>
+            <div class="stat-val c-warn" id="statSwipes">$0.00</div>
+          </div>
+          <div class="stat-box">
+            <div class="eyebrow">Subs/Mo</div>
+            <div class="stat-val c-amber" id="statSubs">$0.00</div>
+          </div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-track">
+            <div class="progress-fill" id="progressFill" style="width:0%"></div>
+          </div>
+          <div class="progress-meta">
+            <span class="eyebrow" id="progressUsed">0% used</span>
+            <span class="eyebrow" id="progressLeft">$0 remaining</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Up -->
+      <div class="card">
+        <div class="card-label-row">
+          <div class="action-icon icon-teal">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M6 2v8M2 6h8" stroke="#00E5C0" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="eyebrow">Top Up Pool</span>
+        </div>
+        <input class="input-field" type="number" id="topupAmt" placeholder="Amount (BZD)" min="0" step="0.01" inputmode="decimal" />
+        <button class="btn btn-teal" id="topupBtn">Add to Pool</button>
+        <div class="pill-row" id="topupHistory"></div>
+      </div>
+
+      <!-- Log Swipe -->
+      <div class="card">
+        <div class="card-label-row">
+          <div class="action-icon icon-warn">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <rect x="1.5" y="3.5" width="9" height="7" rx="1.5" stroke="#FF6B6B" stroke-width="1.3"/>
+              <path d="M4 3.5V2.5a2 2 0 014 0v1" stroke="#FF6B6B" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="eyebrow">Log Swipe</span>
+        </div>
+        <input class="input-field sans" type="text"   id="swipeName" placeholder="What did you buy?" autocomplete="off" />
+        <input class="input-field"      type="number" id="swipeCost" placeholder="Cost (BZD)" min="0" step="0.01" inputmode="decimal" />
+        <button class="btn btn-warn" id="swipeBtn">Log Swipe</button>
+      </div>
+
+      <!-- Swipe History -->
+      <div class="section-head">
+        <span class="section-title">Swipe History</span>
+        <span class="section-badge" id="swipeCount">0</span>
+      </div>
+      <div id="swipeList" class="swipe-list"></div>
+
+      <!-- Settle -->
+      <div style="margin-top:20px;">
+        <div class="section-head" style="margin-top:0;">
+          <span class="section-title">Settle &amp; Reset</span>
+        </div>
+        <div class="card-sm">
+          <div class="eyebrow" style="margin-bottom:6px;">Cash to hand over</div>
+          <div class="settle-summary">
+            <span class="settle-lbl">Total owed to bank</span>
+            <span class="settle-val" id="settleAmt">$0.00</span>
+          </div>
+          <p style="font-size:12px;color:var(--muted);line-height:1.55;margin-bottom:12px;">
+            Once you hand the cash to your dad and the statement is cleared, tap below. This removes all pending swipes and deducts the settled total from your pool.
+          </p>
+          <button class="btn btn-ghost" id="settleBtn">Settle Bill &amp; Clear Swipes</button>
+        </div>
+      </div>
+
+    </div><!-- /pane-pool -->
+
+    <!-- ─── TAB: SUBS ──────────────────────────────────── -->
+    <div class="tab-pane" id="pane-subs">
+
+      <!-- Monthly Burden Hero -->
+      <div class="burden-card">
+        <div class="eyebrow" style="margin-bottom:4px;">Monthly Recurring Burden</div>
+        <div class="burden-amount">
+          <span class="cur">BZD</span><span id="burdenNum">0.00</span>
+        </div>
+        <div class="sub-meta-row">
+          <div class="stat-box">
+            <div class="eyebrow">Active Subs</div>
+            <div class="stat-val c-teal" id="subCount">0</div>
+          </div>
+          <div class="stat-box">
+            <div class="eyebrow">Annual Cost</div>
+            <div class="stat-val" id="annualCost" style="color:var(--text2);">$0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Subscription -->
+      <div class="card">
+        <div class="card-label-row">
+          <div class="action-icon icon-green">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M6 2v8M2 6h8" stroke="#2DDE98" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="eyebrow">Add Subscription</span>
+        </div>
+        <input class="input-field sans" type="text"   id="subName"    placeholder="Service name (e.g. Netflix)" autocomplete="off" />
+        <input class="input-field"      type="number" id="subCost"    placeholder="Cost (BZD)" min="0" step="0.01" inputmode="decimal" />
+        <select class="input-field" id="subCycle">
+          <option value="monthly">Monthly</option>
+          <option value="yearly">Yearly</option>
+        </select>
+        <input class="input-field" type="date" id="subRenewal" />
+        <button class="btn btn-green" id="subAddBtn">Add Subscription</button>
+      </div>
+
+      <!-- Sub List -->
+      <div class="section-head">
+        <span class="section-title">Active Subscriptions</span>
+        <span class="section-badge" id="subListCount">0</span>
+      </div>
+      <div id="subList"></div>
+
+    </div><!-- /pane-subs -->
+
+    <!-- ─── TAB: SETTINGS ──────────────────────────────── -->
+    <div class="tab-pane" id="pane-settings">
+
+      <!-- Statement Settings -->
+      <div class="settings-group">
+        <div class="settings-group-title">Statement</div>
+        <div class="setting-row">
+          <div class="setting-label">Statement Due Day</div>
+          <div class="setting-sublabel">Day of the month your credit card bill is due.</div>
+          <div class="setting-input-wrap">
+            <input class="input-field" type="number" id="settingsDueDay" placeholder="e.g. 15" min="1" max="31" inputmode="numeric" style="margin-bottom:6px;" />
+            <button class="btn btn-ghost btn-sm" id="saveDueDayBtn" style="width:auto;">Save Due Day</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cloud Sync -->
+      <div class="settings-group">
+        <div class="settings-group-title">Cloud Sync (Supabase)</div>
+        <div class="setting-row">
+          <div class="setting-row-top">
+            <div>
+              <div class="setting-label">Background Sync</div>
+              <div class="setting-sublabel" id="supabaseStatus">Configure credentials below to enable.</div>
+            </div>
+            <div class="status-badge" id="supabaseBadge">
+              <div class="dot"></div> Offline
+            </div>
+          </div>
+          <div class="setting-input-wrap">
+            <input class="input-field sans" type="url"  id="settingsSupabaseUrl"  placeholder="https://xxxx.supabase.co" />
+            <input class="input-field sans" type="text" id="settingsSupabaseKey"  placeholder="anon / public key" autocomplete="off" />
+            <button class="btn btn-teal btn-sm" id="saveSupabaseBtn" style="width:auto;">Connect & Save</button>
+          </div>
+        </div>
+        <div class="setting-row" style="font-size:12px; color: var(--muted); line-height:1.6; padding:12px 14px;">
+          <strong style="color:var(--soft);">RLS Security Note:</strong> Your <code style="color:var(--teal);font-size:11px;">anon</code> key is safe to use here because Supabase Row Level Security (RLS) ensures only authenticated users can read or write their own rows — even if the key is visible in client code. Enable RLS on your tables and add a policy: <code style="color:var(--teal);font-size:11px;">auth.uid() = user_id</code>. The <code style="color:var(--teal);font-size:11px;">anon</code> key without a valid session cannot bypass this.
+        </div>
+      </div>
+
+      <!-- Backup & Restore -->
+      <div class="settings-group">
+        <div class="settings-group-title">Backup &amp; Restore</div>
+        <div class="setting-row">
+          <div class="setting-label">Export Configuration</div>
+          <div class="setting-sublabel">Copies your full state snapshot to clipboard.</div>
+          <div class="setting-input-wrap">
+            <div class="export-box" id="exportBox">Press Export to generate snapshot.</div>
+            <button class="btn btn-ghost btn-sm" id="exportBtn" style="width:auto;">Copy Snapshot to Clipboard</button>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">Import Configuration</div>
+          <div class="setting-sublabel">Paste a snapshot string below and tap Import.</div>
+          <div class="setting-input-wrap">
+            <textarea class="input-field sans" id="importBox" placeholder="Paste snapshot here…" rows="3" style="resize:none; font-size:12px; margin-bottom:8px;"></textarea>
+            <button class="btn btn-ghost btn-sm" id="importBtn" style="width:auto;">Import &amp; Restore</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Danger Zone -->
+      <div class="settings-group">
+        <div class="settings-group-title">Danger Zone</div>
+        <div class="setting-row">
+          <div class="setting-label" style="color:var(--warn);">Master Reset</div>
+          <div class="setting-sublabel">Wipes all local data permanently. Cannot be undone.</div>
+          <div class="setting-input-wrap">
+            <button class="btn btn-danger btn-sm" id="masterResetBtn" style="width:auto;">Wipe All Data</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align:center; padding: 12px 0 4px; color: var(--muted); font-size:11px; font-family: var(--mono);">
+        POOL CARD v3.0 · local-first
+      </div>
+
+    </div><!-- /pane-settings -->
+
+  </div><!-- /tabViewport -->
+
+  <!-- ══ BOTTOM TAB BAR ══════════════════════════════════ -->
+  <nav id="tabBar">
+    <button class="tab-btn active" data-tab="pool" id="tab-pool">
+      <div class="tab-pip" id="pip-pool"></div>
+      <span class="tab-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <rect x="2" y="7" width="18" height="11" rx="3" stroke="currentColor" stroke-width="1.6"/>
+          <rect x="2" y="10.5" width="18" height="3" fill="currentColor" opacity="0.15"/>
+          <circle cx="16" cy="13" r="2" stroke="currentColor" stroke-width="1.3"/>
+        </svg>
+      </span>
+      <span class="tab-label">Pool</span>
+    </button>
+    <button class="tab-btn" data-tab="subs" id="tab-subs">
+      <div class="tab-pip" id="pip-subs"></div>
+      <span class="tab-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <path d="M4 7h14M4 11h10M4 15h7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          <circle cx="17" cy="15" r="3" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M17 13.5v1.5l1 1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="tab-label">Subs</span>
+    </button>
+    <button class="tab-btn" data-tab="settings" id="tab-settings">
+      <div class="tab-pip" id="pip-settings"></div>
+      <span class="tab-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <circle cx="11" cy="11" r="3" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M11 2v2M11 18v2M2 11h2M18 11h2M4.2 4.2l1.4 1.4M16.4 16.4l1.4 1.4M4.2 17.8l1.4-1.4M16.4 5.6l1.4-1.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="tab-label">Settings</span>
+    </button>
+  </nav>
+
+</div><!-- /appShell -->
+
+<!-- ══ AUTH SCREEN ══════════════════════════════════════ -->
+<div id="authScreen">
+  <div class="auth-logo">
+    <div class="auth-logo-mark">
+      <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+        <rect x="3" y="10" width="28" height="18" rx="4" stroke="#00E5C0" stroke-width="1.8"/>
+        <rect x="3" y="15" width="28" height="4.5" fill="#00E5C0" opacity="0.12"/>
+        <circle cx="24" cy="20" r="3.5" stroke="#00E5C0" stroke-width="1.5"/>
+        <circle cx="27.5" cy="20" r="3.5" stroke="#00E5C0" stroke-width="1.5" opacity="0.35"/>
+        <path d="M10 8V6M17 7V5" stroke="#00E5C0" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+      </svg>
+    </div>
+    <div>
+      <div class="auth-title">POOL CARD</div>
+      <div class="auth-sub">personal finance firewall</div>
+    </div>
+  </div>
+
+  <div class="auth-card">
+    <div class="auth-mode-label" id="authModeLabel">Welcome back</div>
+    <div class="auth-mode-sub"  id="authModeSub">Sign in to access your pool.</div>
+
+    <div class="auth-error" id="authError"></div>
+
+    <input class="input-field sans" type="email"    id="authEmail"    placeholder="Email address"   autocomplete="email"     inputmode="email" />
+    <input class="input-field sans" type="password" id="authPassword" placeholder="Password"        autocomplete="current-password" />
+    <div id="authConfirmWrap" style="display:none;">
+      <input class="input-field sans" type="password" id="authConfirm" placeholder="Confirm password" autocomplete="new-password" />
+    </div>
+
+    <button class="btn btn-teal" id="authSubmitBtn" style="margin-top:4px;">Sign In</button>
+
+    <div class="auth-toggle">
+      <span id="authToggleText">Don't have an account?</span>
+      <button id="authToggleBtn">Sign Up</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ OVERLAYS ══════════════════════════════════════════ -->
+<div class="overlay" id="overlay">
+  <div class="overlay-sheet">
+    <div class="overlay-title" id="overlayTitle">Confirm</div>
+    <div class="overlay-body"  id="overlayBody"></div>
+    <div class="row2">
+      <button class="btn btn-ghost" id="overlayCancelBtn">Cancel</button>
+      <button class="btn btn-teal"  id="overlayConfirmBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════
+   LOCAL STORAGE ENGINE (local-first)
+═══════════════════════════════════════════════ */
+const LS = {
+  get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set: (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) { console.warn('LS write failed', e); } }
+};
+
+/* ═══════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════ */
+let state = LS.get('poolcard_v3') || {
+  loaded:    0,
+  swipes:    [],
+  topupLog:  [],
+  subs:      [],
+  dueDay:    null,          // statement due day (1-31)
+  supabaseUrl: '',
+  supabaseKey: '',
+};
+
+// One-time migration from v2
+(function migrate() {
+  const old = LS.get('poolcard_v2');
+  if (old && !LS.get('_migrated_v3')) {
+    state.loaded   = old.loaded   || 0;
+    state.swipes   = old.swipes   || [];
+    state.topupLog = old.topupLog || [];
+    LS.set('_migrated_v3', true);
+    save();
+  }
+})();
+
+function save() {
+  LS.set('poolcard_v3', state);
+  syncToSupabase();   // fire-and-forget background push
+}
+
+/* ═══════════════════════════════════════════════
+   SUPABASE SYNC (local-first: write LS first, push async)
+═══════════════════════════════════════════════ */
+let sbClient  = null;
+let sbSession = null;   // current auth session
+let syncTimer = null;
+
+function initSupabase(onReady) {
+  if (!state.supabaseUrl || !state.supabaseKey) { setSyncStatus('idle'); return; }
+  try {
+    const lib = window.supabase;
+    if (!lib) { setSyncStatus('error'); return; }
+    sbClient = lib.createClient(state.supabaseUrl, state.supabaseKey, {
+      auth: { persistSession: true, autoRefreshToken: true }
+    });
+
+    // Listen for auth state changes (handles auto-refresh & tab focus restore)
+    sbClient.auth.onAuthStateChange((event, session) => {
+      sbSession = session;
+      if (session) {
+        showApp();
+      } else {
+        showAuthScreen();
+      }
+    });
+
+    // Check for an existing session immediately
+    sbClient.auth.getSession().then(({ data }) => {
+      sbSession = data.session;
+      if (sbSession) {
+        showApp();
+        setSyncStatus('synced');
+      } else {
+        showAuthScreen();
+      }
+      if (onReady) onReady();
+    });
+
+  } catch(e) {
+    sbClient = null;
+    setSyncStatus('error');
+    if (onReady) onReady();
+  }
+}
+
+function setSyncStatus(status) {
+  const dot   = document.getElementById('syncDot');
+  const badge = document.getElementById('supabaseBadge');
+  dot.className = 'sync-dot';
+  if (status === 'syncing') dot.classList.add('syncing');
+  if (status === 'synced')  dot.classList.add('synced');
+  if (status === 'error')   dot.classList.add('error');
+  if (badge) {
+    badge.className = 'status-badge';
+    if (status === 'synced')       { badge.className += ' connected'; badge.innerHTML = '<div class="dot"></div> Connected'; }
+    else if (status === 'error')   { badge.className += ' error';     badge.innerHTML = '<div class="dot"></div> Error'; }
+    else                           {                                   badge.innerHTML = '<div class="dot"></div> Offline'; }
+  }
+}
+
+function syncToSupabase() {
+  if (!sbClient || !sbSession) return;
+  clearTimeout(syncTimer);
+  setSyncStatus('syncing');
+  syncTimer = setTimeout(async () => {
+    try {
+      const { error } = await sbClient
+        .from('pool_card_sync')
+        .upsert({
+          key:        'pool_state',
+          user_id:    sbSession.user.id,
+          data:       { loaded: state.loaded, swipes: state.swipes, topupLog: state.topupLog, subs: state.subs, dueDay: state.dueDay },
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'key' });
+      setSyncStatus(error ? 'error' : 'synced');
+    } catch(e) { setSyncStatus('error'); }
+  }, 1500);
+}
+
+/* ── Pull remote state on first login (merge: remote wins if local is empty) ── */
+async function pullRemoteState() {
+  if (!sbClient || !sbSession) return;
+  try {
+    const { data, error } = await sbClient
+      .from('pool_card_sync')
+      .select('data')
+      .eq('key', 'pool_state')
+      .eq('user_id', sbSession.user.id)
+      .maybeSingle();
+    if (error || !data) return;
+    const remote = data.data;
+    // Only restore remote if local pool is completely empty (first install / new device)
+    if (state.loaded === 0 && state.swipes.length === 0 && state.subs.length === 0) {
+      state = { ...state, ...remote };
+      save();
+      renderAll(false);
+      showToast('Cloud data restored');
+    }
+  } catch(e) { /* silent */ }
+}
+
+/* ═══════════════════════════════════════════════
+   AUTH SCREEN LOGIC
+═══════════════════════════════════════════════ */
+let authMode = 'signin'; // 'signin' | 'signup'
+
+function showAuthScreen() {
+  const scr = document.getElementById('authScreen');
+  scr.classList.remove('hidden');
+  document.getElementById('appShell').style.visibility = 'hidden';
+  document.getElementById('signOutBtn').style.display  = 'none';
+  setAuthMode('signin');
+}
+
+function showApp() {
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('appShell').style.visibility = 'visible';
+  document.getElementById('signOutBtn').style.display  = 'block';
+  setSyncStatus('synced');
+  pullRemoteState();
+}
+
+function setAuthMode(mode) {
+  authMode = mode;
+  const isSignup = mode === 'signup';
+  document.getElementById('authModeLabel').textContent    = isSignup ? 'Create account'        : 'Welcome back';
+  document.getElementById('authModeSub').textContent      = isSignup ? 'Set up your Pool Card.' : 'Sign in to access your pool.';
+  document.getElementById('authSubmitBtn').textContent    = isSignup ? 'Create Account'         : 'Sign In';
+  document.getElementById('authToggleText').textContent   = isSignup ? 'Already have an account?' : "Don't have an account?";
+  document.getElementById('authToggleBtn').textContent    = isSignup ? 'Sign In'                : 'Sign Up';
+  document.getElementById('authConfirmWrap').style.display = isSignup ? 'block' : 'none';
+  document.getElementById('authPassword').autocomplete   = isSignup ? 'new-password' : 'current-password';
+  clearAuthError();
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('authError');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function clearAuthError() {
+  document.getElementById('authError').classList.remove('show');
+}
+
+document.getElementById('authToggleBtn').addEventListener('click', () => {
+  setAuthMode(authMode === 'signin' ? 'signup' : 'signin');
+});
+
+document.getElementById('authSubmitBtn').addEventListener('click', async () => {
+  clearAuthError();
+  if (!sbClient) { showAuthError('Configure Supabase credentials in Settings first.'); return; }
+
+  const email    = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const confirm  = document.getElementById('authConfirm').value;
+
+  if (!email || !password) { showAuthError('Please enter your email and password.'); return; }
+  if (authMode === 'signup' && password !== confirm) { showAuthError('Passwords do not match.'); return; }
+  if (password.length < 6)  { showAuthError('Password must be at least 6 characters.'); return; }
+
+  const btn = document.getElementById('authSubmitBtn');
+  btn.classList.add('btn-loading');
+  btn.disabled = true;
+
+  try {
+    let result;
+    if (authMode === 'signup') {
+      result = await sbClient.auth.signUp({ email, password });
+      if (result.error) throw result.error;
+      // Supabase may require email confirmation depending on project settings
+      if (result.data.session) {
+        // Confirmed immediately (email confirm disabled in Supabase settings)
+        showApp();
+      } else {
+        showAuthError('Check your email to confirm your account, then sign in.');
+        setAuthMode('signin');
+      }
+    } else {
+      result = await sbClient.auth.signInWithPassword({ email, password });
+      if (result.error) throw result.error;
+      sbSession = result.data.session;
+      showApp();
+    }
+  } catch(err) {
+    const msg = err.message || 'Authentication failed. Please try again.';
+    showAuthError(msg);
+  } finally {
+    btn.classList.remove('btn-loading');
+    btn.disabled = false;
+  }
+});
+
+// Allow Enter key in auth fields
+['authEmail','authPassword','authConfirm'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('authSubmitBtn').click();
+  });
+});
+
+// Sign Out
+document.getElementById('signOutBtn').addEventListener('click', async () => {
+  if (!sbClient) return;
+  await sbClient.auth.signOut();
+  sbSession = null;
+  showAuthScreen();
+  showToast('Signed out');
+});
+
+/* ═══════════════════════════════════════════════
+   COMPUTED VALUES
+═══════════════════════════════════════════════ */
+function totalSwipes()    { return state.swipes.reduce((s,x) => s + x.cost, 0); }
+function monthlySubBurden() {
+  return state.subs.reduce((s, sub) => {
+    return s + (sub.cycle === 'yearly' ? sub.cost / 12 : sub.cost);
+  }, 0);
+}
+function pool() { return state.loaded - totalSwipes(); }
+function fmt(n) { return Math.abs(n).toFixed(2); }
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ═══════════════════════════════════════════════
+   SMART BANNERS
+═══════════════════════════════════════════════ */
+function renderBanners() {
+  const area    = document.getElementById('bannerArea');
+  const banners = [];
+
+  const p     = pool();
+  const total = state.loaded;
+  const pct   = total > 0 ? (totalSwipes() / total) * 100 : 0;
+
+  // 1. Low pool warning (< 20% remaining)
+  if (total > 0 && pct > 80) {
+    banners.push({
+      cls: 'banner-warn',
+      text: `<strong>⚠️ Low Pool:</strong> Only <strong>$${fmt(p)} BZD</strong> remaining (${Math.round(100 - pct)}% left). Spend carefully.`
+    });
+  }
+
+  // 2. Statement countdown
+  if (state.dueDay) {
+    const today = new Date();
+    let due = new Date(today.getFullYear(), today.getMonth(), state.dueDay);
+    if (due <= today) due = new Date(today.getFullYear(), today.getMonth() + 1, state.dueDay);
+    const daysLeft = Math.ceil((due - today) / 86400000);
+    if (daysLeft <= 5) {
+      banners.push({
+        cls: 'banner',
+        text: `<strong>📅 Statement Alert:</strong> Bill due in <strong>${daysLeft} day${daysLeft !== 1 ? 's' : ''}</strong>. Settle with your dad soon.`
+      });
+    }
+  }
+
+  // 3. Upcoming sub renewals (within 48 hrs)
+  const now = Date.now();
+  state.subs.forEach(sub => {
+    if (!sub.renewal) return;
+    const renewMs = new Date(sub.renewal).getTime();
+    const hoursLeft = (renewMs - now) / 3600000;
+    if (hoursLeft >= 0 && hoursLeft <= 48) {
+      banners.push({
+        cls: 'banner',
+        text: `<strong>⏳ Auto-Renew Imminent:</strong> <strong>${esc(sub.name)}</strong> ($${fmt(sub.cost)}) charges in ~${Math.ceil(hoursLeft)}h.`
+      });
+    }
+  });
+
+  if (banners.length === 0) {
+    area.classList.remove('has-banners');
+    area.innerHTML = '';
+    return;
+  }
+
+  area.classList.add('has-banners');
+  area.innerHTML = banners.map(b =>
+    `<div class="banner ${b.cls}">
+       <div class="banner-text">${b.text}</div>
+     </div>`
+  ).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER — POOL TAB
+═══════════════════════════════════════════════ */
+function renderPool(animate = false) {
+  const p      = pool();
+  const total  = state.loaded;
+  const spent  = totalSwipes();
+  const monthly = monthlySubBurden();
+  const pct    = total > 0 ? Math.min(100, (spent / total) * 100) : 0;
+  const danger = p < 0 || pct >= 80;
+
+  // Hero
+  const heroEl = document.getElementById('poolCard');
+  heroEl.className = 'pool-hero' + (danger ? ' danger' : '');
+
+  const amtEl = document.getElementById('poolAmount');
+  amtEl.className = 'pool-amount' + (danger ? ' danger' : total === 0 ? ' zero' : '');
+  document.getElementById('poolNum').textContent = fmt(p);
+  if (animate) {
+    amtEl.classList.remove('anim');
+    void amtEl.offsetWidth;
+    amtEl.classList.add('anim');
+  }
+
+  // Stats
+  document.getElementById('statLoaded').textContent  = '$' + fmt(total);
+  document.getElementById('statSwipes').textContent  = '$' + fmt(spent);
+  document.getElementById('statSubs').textContent    = '$' + fmt(monthly);
+  document.getElementById('settleAmt').textContent   = '$' + fmt(spent);
+
+  // Progress
+  const fill = document.getElementById('progressFill');
+  fill.style.width = pct + '%';
+  fill.className   = 'progress-fill' + (danger ? ' danger' : '');
+  document.getElementById('progressUsed').textContent = Math.round(pct) + '% used';
+  const leftSign = p >= 0 ? '$' : '-$';
+  document.getElementById('progressLeft').textContent = leftSign + fmt(p) + ' remaining';
+
+  // Swipe count badge
+  document.getElementById('swipeCount').textContent = state.swipes.length;
+
+  // Settle button guard
+  const settleBtn = document.getElementById('settleBtn');
+  settleBtn.disabled = state.swipes.length === 0;
+
+  // Tab pip
+  document.getElementById('pip-pool').classList.toggle('show', p < 0);
+
+  renderSwipes();
+  renderTopups();
+}
+
+function renderSwipes() {
+  const list = document.getElementById('swipeList');
+  if (!state.swipes.length) {
+    list.innerHTML = `<div class="empty-state">
+      <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+        <rect x="6" y="13" width="32" height="22" rx="5" stroke="#4E4E66" stroke-width="1.5"/>
+        <path d="M6 20h32" stroke="#4E4E66" stroke-width="1.5"/>
+        <circle cx="13" cy="28" r="2.5" fill="#4E4E66"/>
+      </svg>
+      <p>No swipes logged yet.<br>Your pool is fully intact.</p>
+    </div>`;
+    return;
+  }
+  list.innerHTML = state.swipes.slice().reverse().map((s, ri) => {
+    const i = state.swipes.length - 1 - ri;
+    return `<div class="swipe-item">
+      <div class="swipe-dot"></div>
+      <div style="flex:1;min-width:0;">
+        <div class="swipe-name">${esc(s.name)}</div>
+        <div class="swipe-time">${s.time}</div>
+      </div>
+      <div class="swipe-cost">−$${fmt(s.cost)}</div>
+      <button class="icon-btn" data-idx="${i}" aria-label="Remove swipe">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.icon-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const idx = +e.currentTarget.dataset.idx;
+      state.swipes.splice(idx, 1);
+      save();
+      renderPool(true);
+      renderBanners();
+      showToast('Swipe removed');
+    });
+  });
+}
+
+function renderTopups() {
+  const el = document.getElementById('topupHistory');
+  el.innerHTML = state.topupLog.slice(-6).reverse()
+    .map(v => `<div class="pill pill-teal">+$${fmt(v)}</div>`).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER — SUBS TAB
+═══════════════════════════════════════════════ */
+function renderSubs() {
+  const monthly = monthlySubBurden();
+  const annual  = state.subs.reduce((s, sub) =>
+    s + (sub.cycle === 'yearly' ? sub.cost : sub.cost * 12), 0);
+
+  document.getElementById('burdenNum').textContent  = fmt(monthly);
+  document.getElementById('subCount').textContent   = state.subs.length;
+  document.getElementById('annualCost').textContent = '$' + fmt(annual);
+  document.getElementById('subListCount').textContent = state.subs.length;
+
+  const list = document.getElementById('subList');
+  if (!state.subs.length) {
+    list.innerHTML = `<div class="empty-state">
+      <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+        <path d="M8 12h28M8 20h20M8 28h14" stroke="#4E4E66" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="34" cy="28" r="7" stroke="#4E4E66" stroke-width="1.4"/>
+        <path d="M34 24.5v3.5l2 2" stroke="#4E4E66" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      <p>No subscriptions tracked yet.<br>Add one above to monitor recurring costs.</p>
+    </div>`;
+    return;
+  }
+
+  const now = Date.now();
+  list.innerHTML = state.subs.map((sub, i) => {
+    let badge = '';
+    if (sub.renewal) {
+      const renewMs   = new Date(sub.renewal).getTime();
+      const daysLeft  = Math.ceil((renewMs - now) / 86400000);
+      const hoursLeft = (renewMs - now) / 3600000;
+      if (hoursLeft < 0) {
+        badge = `<div class="renewal-badge badge-warn">Overdue</div>`;
+      } else if (hoursLeft <= 48) {
+        badge = `<div class="renewal-badge badge-soon">Renews in ~${Math.ceil(hoursLeft)}h</div>`;
+      } else if (daysLeft <= 7) {
+        badge = `<div class="renewal-badge badge-near">Renews in ${daysLeft}d</div>`;
+      } else {
+        badge = `<div class="renewal-badge badge-ok">Renews ${new Date(sub.renewal).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>`;
+      }
+    }
+    const emoji = getSubEmoji(sub.name);
+    return `<div class="sub-item">
+      <div class="sub-icon-wrap">${emoji}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="sub-name">${esc(sub.name)}</div>
+        <div class="sub-detail">${sub.cycle === 'yearly' ? 'Yearly · $' + fmt(sub.cost / 12) + '/mo equiv.' : 'Monthly'}</div>
+        ${badge}
+      </div>
+      <div class="sub-right">
+        <div class="sub-cost">$${fmt(sub.cost)}</div>
+        <div class="sub-cycle">${sub.cycle}</div>
+        <button class="icon-btn" data-sub-idx="${i}" aria-label="Delete subscription" style="margin-top:4px;">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+            <path d="M3 3l9 9M12 3l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('[data-sub-idx]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const idx = +e.currentTarget.dataset.subIdx;
+      const name = state.subs[idx].name;
+      state.subs.splice(idx, 1);
+      save();
+      renderSubs();
+      renderPool(false);
+      renderBanners();
+      showToast(`${name} removed`);
+    });
+  });
+
+  // Update subs pip if any renewal within 48h
+  const hasSoon = state.subs.some(s => {
+    if (!s.renewal) return false;
+    const h = (new Date(s.renewal).getTime() - now) / 3600000;
+    return h >= 0 && h <= 48;
+  });
+  document.getElementById('pip-subs').classList.toggle('show', hasSoon);
+}
+
+function getSubEmoji(name) {
+  const n = (name || '').toLowerCase();
+  if (/netflix|hulu|disney|prime|stream|video|watch/.test(n)) return '🎬';
+  if (/spotify|music|apple music|tidal|deezer/.test(n)) return '🎵';
+  if (/adobe|figma|canva|design|photo/.test(n)) return '🎨';
+  if (/github|digital ocean|aws|cloud|hosting|server/.test(n)) return '☁️';
+  if (/gym|fitness|sport/.test(n)) return '💪';
+  if (/vpn|security|norton/.test(n)) return '🔒';
+  if (/game|xbox|playstation|steam/.test(n)) return '🎮';
+  if (/news|times|wsj|nyt|medium/.test(n)) return '📰';
+  if (/google|microsoft|office|365/.test(n)) return '💼';
+  if (/chat|gpt|claude|ai|copilot/.test(n)) return '🤖';
+  return '📦';
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER — SETTINGS TAB
+═══════════════════════════════════════════════ */
+function renderSettings() {
+  if (state.dueDay) {
+    document.getElementById('settingsDueDay').value = state.dueDay;
+  }
+  if (state.supabaseUrl) {
+    document.getElementById('settingsSupabaseUrl').value = state.supabaseUrl;
+  }
+  if (state.supabaseKey) {
+    document.getElementById('settingsSupabaseKey').value = state.supabaseKey;
+  }
+  setSyncStatus(sbClient ? 'synced' : 'idle');
+}
+
+/* ═══════════════════════════════════════════════
+   FULL RENDER
+═══════════════════════════════════════════════ */
+function renderAll(animate = false) {
+  renderPool(animate);
+  renderSubs();
+  renderBanners();
+  document.getElementById('headerDate').textContent =
+    new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+/* ═══════════════════════════════════════════════
+   ACTIONS — POOL TAB
+═══════════════════════════════════════════════ */
+document.getElementById('topupBtn').addEventListener('click', () => {
+  const raw = parseFloat(document.getElementById('topupAmt').value);
+  if (!raw || raw <= 0) { showToast('Enter an amount first'); return; }
+  state.loaded += raw;
+  state.topupLog.push(raw);
+  if (state.topupLog.length > 12) state.topupLog.shift();
+  save();
+  document.getElementById('topupAmt').value = '';
+  renderPool(true);
+  renderBanners();
+  showToast(`+$${fmt(raw)} added to pool`);
+});
+
+document.getElementById('topupAmt').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('topupBtn').click();
+});
+
+document.getElementById('swipeBtn').addEventListener('click', () => {
+  const nameEl = document.getElementById('swipeName');
+  const costEl = document.getElementById('swipeCost');
+  const name = nameEl.value.trim();
+  const cost = parseFloat(costEl.value);
+  if (!name)          { showToast('Add a name for the swipe'); return; }
+  if (!cost || cost <= 0) { showToast('Enter a valid amount'); return; }
+
+  state.swipes.push({
+    name, cost, id: Date.now(),
+    time: new Date().toLocaleString('en-US', {
+      month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    })
+  });
+  save();
+  nameEl.value = '';
+  costEl.value = '';
+  renderPool(true);
+  renderBanners();
+  showToast(`−$${fmt(cost)} logged`);
+  // Keyboard loop: keep keyboard open, cursor back to name field
+  setTimeout(() => nameEl.focus(), 50);
+});
+
+document.getElementById('swipeName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('swipeCost').focus();
+});
+document.getElementById('swipeCost').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('swipeBtn').click();
+});
+
+// Settle
+document.getElementById('settleBtn').addEventListener('click', () => {
+  if (!state.swipes.length) return; // ghost-proof
+  const total = totalSwipes();
+  showOverlay(
+    'Confirm Settlement',
+    `Hand <span class="overlay-val">$${fmt(total)} BZD</span> to your dad to clear the statement.<br><br>
+     This will remove all <strong>${state.swipes.length}</strong> pending swipe${state.swipes.length !== 1 ? 's' : ''} and deduct the total from your pool.`,
+    'btn-teal', 'Yes, Settle',
+    () => {
+      state.loaded = Math.max(0, state.loaded - total);
+      state.swipes = [];
+      save();
+      renderAll(true);
+      showToast('✓ Bill settled — slate is clean');
+    }
+  );
+});
+
+/* ═══════════════════════════════════════════════
+   ACTIONS — SUBS TAB
+═══════════════════════════════════════════════ */
+document.getElementById('subAddBtn').addEventListener('click', () => {
+  const name    = document.getElementById('subName').value.trim();
+  const cost    = parseFloat(document.getElementById('subCost').value);
+  const cycle   = document.getElementById('subCycle').value;
+  const renewal = document.getElementById('subRenewal').value;
+
+  if (!name)           { showToast('Enter a service name'); return; }
+  if (!cost || cost <= 0) { showToast('Enter a valid cost'); return; }
+
+  state.subs.push({ name, cost, cycle, renewal: renewal || null, id: Date.now() });
+  save();
+  document.getElementById('subName').value    = '';
+  document.getElementById('subCost').value    = '';
+  document.getElementById('subRenewal').value = '';
+  renderSubs();
+  renderPool(false);
+  renderBanners();
+  showToast(`${name} added`);
+});
+
+/* ═══════════════════════════════════════════════
+   ACTIONS — SETTINGS TAB
+═══════════════════════════════════════════════ */
+document.getElementById('saveDueDayBtn').addEventListener('click', () => {
+  const v = parseInt(document.getElementById('settingsDueDay').value, 10);
+  if (!v || v < 1 || v > 31) { showToast('Enter a day between 1 and 31'); return; }
+  state.dueDay = v;
+  save();
+  renderBanners();
+  showToast(`Statement due day set to the ${v}${ordinal(v)}`);
+});
+
+document.getElementById('saveSupabaseBtn').addEventListener('click', () => {
+  const url = document.getElementById('settingsSupabaseUrl').value.trim();
+  const key = document.getElementById('settingsSupabaseKey').value.trim();
+  if (!url || !key) { showToast('Enter both URL and key'); return; }
+  state.supabaseUrl = url;
+  state.supabaseKey = key;
+  LS.set('poolcard_v3', state); // save without triggering sync yet
+  initSupabase();
+  showToast('Supabase connected — sign in to activate sync');
+  renderSettings();
+});
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const snapshot = JSON.stringify(state);
+  const encoded  = btoa(unescape(encodeURIComponent(snapshot)));
+  document.getElementById('exportBox').textContent = encoded;
+  navigator.clipboard.writeText(encoded)
+    .then(() => showToast('Snapshot copied to clipboard'))
+    .catch(() => showToast('Copy the text above manually'));
+});
+
+document.getElementById('importBtn').addEventListener('click', () => {
+  const raw = document.getElementById('importBox').value.trim();
+  if (!raw) { showToast('Paste a snapshot string first'); return; }
+  try {
+    const decoded = decodeURIComponent(escape(atob(raw)));
+    const parsed  = JSON.parse(decoded);
+    // Validate minimum shape
+    if (typeof parsed.loaded !== 'number') throw new Error('Bad snapshot');
+    showOverlay(
+      'Import Snapshot',
+      `This will replace <strong>all current data</strong> with the imported snapshot.<br><br>This cannot be undone.`,
+      'btn-warn', 'Yes, Import',
+      () => {
+        state = { ...state, ...parsed };
+        save();
+        renderAll(true);
+        renderSettings();
+        document.getElementById('importBox').value = '';
+        showToast('Snapshot restored');
+      }
+    );
+  } catch(e) {
+    showToast('Invalid snapshot — check the string and retry');
+  }
+});
+
+document.getElementById('masterResetBtn').addEventListener('click', () => {
+  showOverlay(
+    '⚠️ Wipe All Data',
+    `This will permanently delete <strong>all swipes, top-ups, subscriptions, and settings</strong>.<br><br>There is no recovery.`,
+    'btn-danger', 'Wipe Everything',
+    () => {
+      localStorage.removeItem('poolcard_v3');
+      localStorage.removeItem('poolcard_v2');
+      localStorage.removeItem('_migrated_v3');
+      state = { loaded:0, swipes:[], topupLog:[], subs:[], dueDay:null, supabaseUrl:'', supabaseKey:'' };
+      if (sbClient) { sbClient.auth.signOut(); sbClient = null; }
+      sbSession = null;
+      renderAll(false);
+      renderSettings();
+      showAuthScreen();
+      showToast('All data wiped');
+    }
+  );
+});
+
+/* ═══════════════════════════════════════════════
+   TAB NAVIGATION
+═══════════════════════════════════════════════ */
+let currentTab = 'pool';
+const paneMap  = { pool: 'pane-pool', subs: 'pane-subs', settings: 'pane-settings' };
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    if (tab === currentTab) return;
+    switchTab(tab);
+  });
+});
+
+function switchTab(tab) {
+  // De-activate current
+  document.getElementById('tab-' + currentTab).classList.remove('active');
+  document.getElementById(paneMap[currentTab]).classList.remove('active');
+
+  currentTab = tab;
+
+  // Activate new
+  document.getElementById('tab-' + tab).classList.add('active');
+  const pane = document.getElementById(paneMap[tab]);
+  pane.classList.add('active');
+
+  // Scroll pane to top on switch
+  pane.scrollTop = 0;
+
+  if (tab === 'settings') renderSettings();
+}
+
+/* ═══════════════════════════════════════════════
+   OVERLAY ENGINE
+═══════════════════════════════════════════════ */
+let overlayCallback = null;
+
+function showOverlay(title, body, confirmCls, confirmLabel, onConfirm) {
+  document.getElementById('overlayTitle').textContent = title;
+  document.getElementById('overlayBody').innerHTML = body;
+  const confirmBtn = document.getElementById('overlayConfirmBtn');
+  confirmBtn.className = 'btn ' + confirmCls;
+  confirmBtn.textContent = confirmLabel;
+  overlayCallback = onConfirm;
+  document.getElementById('overlay').classList.add('show');
+}
+
+document.getElementById('overlayCancelBtn').addEventListener('click', closeOverlay);
+document.getElementById('overlayConfirmBtn').addEventListener('click', () => {
+  closeOverlay();
+  if (overlayCallback) { overlayCallback(); overlayCallback = null; }
+});
+document.getElementById('overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('overlay')) closeOverlay();
+});
+function closeOverlay() {
+  document.getElementById('overlay').classList.remove('show');
+}
+
+/* ═══════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════ */
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+/* ═══════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════ */
+function ordinal(n) {
+  if (n >= 11 && n <= 13) return 'th';
+  switch (n % 10) { case 1: return 'st'; case 2: return 'nd'; case 3: return 'rd'; default: return 'th'; }
+}
+
+// Set renewal date input min to today
+(function setDateMin() {
+  const today = new Date().toISOString().split('T')[0];
+  const el = document.getElementById('subRenewal');
+  if (el) el.min = today;
+})();
+
+/* ═══════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════ */
+window.addEventListener('load', () => {
+  if (state.supabaseUrl && state.supabaseKey) {
+    // Credentials exist — init Supabase; it will show auth or app
+    initSupabase();
+  } else {
+    // No credentials yet — show app directly (offline / settings-first mode)
+    showApp();
+  }
+});
+
+renderAll(false);
+</script>
+</body>
+</html>
