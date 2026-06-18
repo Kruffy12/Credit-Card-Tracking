@@ -2,15 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Pool Card</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Float</title>
 
   <!-- ── iOS PWA ── -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Pool Card" />
+  <meta name="apple-mobile-web-app-title" content="Float" />
   <meta name="theme-color" content="#0A0A0F" />
-  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230A0A0F'/%3E%3Crect x='24' y='60' width='132' height='80' rx='12' fill='none' stroke='%2300E5C0' stroke-width='5'/%3E%3Crect x='24' y='82' width='132' height='18' fill='%2300E5C0' opacity='0.15'/%3E%3Ccircle cx='130' cy='100' r='14' fill='none' stroke='%2300E5C0' stroke-width='4'/%3E%3Ccircle cx='145' cy='100' r='14' fill='none' stroke='%2300E5C0' stroke-width='4' opacity='0.5'/%3E%3C/svg%3E" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <link rel="icon" type="image/png" href="icon.png" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -62,21 +63,39 @@
 
 html {
   background: var(--void);
+  /* Lock to exactly the viewport — no rubber-band on html level */
   height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  /* Kill callout popups on long-press */
+  -webkit-touch-callout: none;
 }
 
 body {
   font-family: var(--sans);
   color: var(--text);
   background: var(--void);
-  min-height: 100dvh;
-  overflow-x: hidden;
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;                    /* body itself never scrolls */
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
-  /* Full-bleed layout: header + banners + tab-content + tab-bar */
+  text-size-adjust: 100%;
+  /* Kill text selection app-wide for native feel */
+  -webkit-user-select: none;
+  user-select: none;
+  /* Kill double-tap zoom on interactive elements */
+  touch-action: manipulation;
   display: flex;
   flex-direction: column;
+}
+
+/* Re-allow text selection only inside inputs & textareas */
+input, textarea, [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+  touch-action: auto;
 }
 
 /* ═══════════════════════════════════════════════
@@ -85,7 +104,9 @@ body {
 #appShell {
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;                    /* shell never scrolls; only panes do */
 }
 
 /* ── App Header ── */
@@ -112,11 +133,6 @@ body {
   font-weight: 700;
   color: var(--teal);
   letter-spacing: 0.06em;
-}
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 .header-date {
   font-family: var(--mono);
@@ -179,6 +195,7 @@ body {
 /* ── Tab Content Scroll Area ── */
 #tabViewport {
   flex: 1;
+  min-height: 0;                       /* critical: lets flex child shrink below content size */
   overflow: hidden;
   position: relative;
 }
@@ -189,11 +206,18 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  padding: 16px calc(var(--safe-r) + 16px) calc(var(--safe-bot) + var(--tab-h) + 24px) calc(var(--safe-l) + 16px);
+  overscroll-behavior-y: contain;      /* contain bounce to the pane only */
+  /* Padding: top gap + right safe + bottom clears tab bar + left safe */
+  padding: 16px
+           calc(var(--safe-r) + 16px)
+           calc(var(--safe-bot) + var(--tab-h) + 28px)
+           calc(var(--safe-l) + 16px);
   opacity: 0;
   pointer-events: none;
   transform: translateX(20px);
   transition: opacity 0.22s ease, transform 0.22s ease;
+  /* Ensure content never clips at edges */
+  width: 100%;
 }
 .tab-pane.active {
   opacity: 1;
@@ -297,19 +321,21 @@ body {
   background: var(--void);
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
-  padding: 11px 13px;
+  padding: 13px 13px;
   font-family: var(--mono);
-  font-size: 15px;
+  /* 16px is the iOS magic number — anything smaller triggers auto-zoom */
+  font-size: 16px;
   color: var(--text);
   outline: none;
   -webkit-appearance: none;
   appearance: none;
   transition: border-color 0.2s;
   margin-bottom: 8px;
+  display: block;
 }
 .input-field:focus { border-color: var(--teal); }
-.input-field::placeholder { color: var(--muted); font-family: var(--sans); font-size: 14px; }
-.input-field.sans { font-family: var(--sans); font-size: 14px; }
+.input-field::placeholder { color: var(--muted); font-family: var(--sans); font-size: 15px; }
+.input-field.sans { font-family: var(--sans); font-size: 16px; }
 
 select.input-field {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235A5A72' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
@@ -318,6 +344,7 @@ select.input-field {
   padding-right: 34px;
   cursor: pointer;
   color: var(--text);
+  font-size: 16px;
 }
 select.input-field option { background: #1C1C28; }
 
@@ -414,7 +441,7 @@ select.input-field option { background: #1C1C28; }
 
 .pool-amount {
   font-family: var(--mono);
-  font-size: clamp(46px, 13vw, 64px);
+  font-size: clamp(38px, 11vw, 60px);  /* tighter clamp — won't overflow card on SE */
   font-weight: 700;
   color: var(--teal);
   line-height: 1;
@@ -422,6 +449,10 @@ select.input-field option { background: #1C1C28; }
   cursor: default;
   -webkit-user-select: none; user-select: none;
   transition: color 0.3s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 .pool-amount .cur {
   font-size: 0.38em; font-weight: 400;
@@ -446,12 +477,17 @@ select.input-field option { background: #1C1C28; }
   background: var(--void);
   border-radius: var(--r-sm);
   padding: 9px 10px;
+  min-width: 0;                        /* allow flex children to shrink */
+  overflow: hidden;
 }
 .stat-val {
   font-family: var(--mono);
-  font-size: 14px;
+  font-size: 13px;                     /* slightly smaller — fits all 3 on SE */
   font-weight: 600;
   margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .stat-val.c-teal  { color: var(--teal); }
 .stat-val.c-warn  { color: var(--warn); }
@@ -485,8 +521,10 @@ select.input-field option { background: #1C1C28; }
   border: 1px solid var(--border);
   border-radius: var(--r-md);
   padding: 11px 14px;
-  display: flex; align-items: center; gap: 11px;
+  display: flex; align-items: center; gap: 10px;
   animation: slideIn 0.22s ease;
+  min-width: 0;                        /* contain children */
+  overflow: hidden;
 }
 @keyframes slideIn {
   from { opacity: 0; transform: translateY(-5px); }
@@ -498,22 +536,32 @@ select.input-field option { background: #1C1C28; }
   background: var(--warn);
   flex-shrink: 0;
 }
+.swipe-info {
+  flex: 1;
+  min-width: 0;                        /* allow text truncation */
+  overflow: hidden;
+}
 .swipe-name {
   font-size: 14px; font-weight: 500; color: var(--text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: block;
 }
 .swipe-time { font-size: 10px; color: var(--muted); margin-top: 2px; }
 .swipe-cost {
   font-family: var(--mono);
-  font-size: 14px; font-weight: 600;
+  font-size: 13px; font-weight: 600;
   color: var(--warn); flex-shrink: 0;
+  white-space: nowrap;
 }
 .icon-btn {
   background: none; border: none;
-  padding: 5px; cursor: pointer;
+  padding: 6px; cursor: pointer;
   color: var(--muted); flex-shrink: 0;
   touch-action: manipulation;
   transition: color 0.15s;
+  /* Larger tap target */
+  min-width: 32px; min-height: 32px;
+  display: flex; align-items: center; justify-content: center;
 }
 .icon-btn:active { color: var(--warn); }
 
@@ -524,9 +572,13 @@ select.input-field option { background: #1C1C28; }
   border-radius: var(--r-sm);
   padding: 11px 14px;
   margin: 12px 0;
+  gap: 12px;
 }
-.settle-lbl { font-size: 13px; color: var(--soft); }
-.settle-val { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--warn); }
+.settle-lbl { font-size: 13px; color: var(--soft); flex: 1; }
+.settle-val {
+  font-family: var(--mono); font-size: 18px; font-weight: 700;
+  color: var(--warn); flex-shrink: 0; white-space: nowrap;
+}
 
 /* ═══════════════════════════════════════════════
    TAB 2 — SUBS
@@ -548,15 +600,6 @@ select.input-field option { background: #1C1C28; }
   background: radial-gradient(circle, var(--green-dim) 0%, transparent 70%);
   pointer-events: none;
 }
-.burden-amount {
-  font-family: var(--mono);
-  font-size: clamp(36px, 10vw, 50px);
-  font-weight: 700;
-  color: var(--green);
-  line-height: 1;
-  letter-spacing: -0.02em;
-  margin-top: 6px;
-}
 .burden-amount .cur {
   font-size: 0.38em; font-weight: 400;
   vertical-align: super; margin-right: 3px; opacity: 0.6;
@@ -575,6 +618,8 @@ select.input-field option { background: #1C1C28; }
   padding: 13px 15px;
   display: flex; align-items: center; gap: 12px;
   animation: slideIn 0.22s ease;
+  min-width: 0;
+  overflow: hidden;
 }
 .sub-icon-wrap {
   width: 36px; height: 36px;
@@ -585,10 +630,18 @@ select.input-field option { background: #1C1C28; }
   flex-shrink: 0;
   font-size: 16px;
 }
-.sub-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.sub-info {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.sub-name {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .sub-detail { font-size: 11px; color: var(--soft); margin-top: 2px; }
-.sub-right { margin-left: auto; text-align: right; flex-shrink: 0; }
-.sub-cost { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--green); }
+.sub-right { text-align: right; flex-shrink: 0; }
+.sub-cost { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--green); white-space: nowrap; }
 .sub-cycle { font-size: 10px; color: var(--muted); margin-top: 2px; }
 
 .renewal-badge {
@@ -624,8 +677,12 @@ select.input-field option { background: #1C1C28; }
   margin-bottom: 8px;
 }
 .setting-row-top {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: flex-start; justify-content: space-between;
   gap: 12px;
+}
+.setting-row-top > div:first-child {
+  flex: 1;
+  min-width: 0;
 }
 .setting-label { font-size: 14px; font-weight: 500; color: var(--text); }
 .setting-sublabel { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
@@ -719,7 +776,10 @@ select.input-field option { background: #1C1C28; }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: calc(var(--safe-top) + 24px) 28px calc(var(--safe-bot) + 24px);
+  /* Scrollable on very small screens (SE) */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: calc(var(--safe-top) + 24px) 24px calc(var(--safe-bot) + 24px);
   transition: opacity 0.3s ease;
 }
 #authScreen.hidden {
@@ -864,6 +924,88 @@ select.input-field option { background: #1C1C28; }
   text-align: center;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+/* ═══════════════════════════════════════════════
+   GLOBAL OVERFLOW SAFETY
+═══════════════════════════════════════════════ */
+
+/* All cards never bleed outside their container */
+.card, .card-sm, .pool-hero, .burden-card,
+.setting-row, .swipe-item, .sub-item {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Textarea gets same 16px treatment to prevent iOS zoom */
+textarea.input-field {
+  font-size: 16px;
+  font-family: var(--sans);
+  line-height: 1.5;
+  resize: none;
+}
+
+/* Burden amount — same safe clamp as pool-amount */
+.burden-amount {
+  font-family: var(--mono);
+  font-size: clamp(32px, 10vw, 50px);
+  font-weight: 700;
+  color: var(--green);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin-top: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Header right — sign-out never wraps and squeezes logo */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+#signOutBtn {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Progress meta labels never overflow on narrow screens */
+.progress-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  gap: 8px;
+}
+.progress-meta .eyebrow {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Banner text wraps cleanly */
+.banner-text {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text2);
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+/* Overlay body text wraps */
+.overlay-body {
+  font-size: 14px;
+  color: var(--soft);
+  line-height: 1.6;
+  margin-bottom: 20px;
+  word-break: break-word;
+}
+
+/* Prevent any stray inline styles from causing horizontal scroll */
+#pane-pool, #pane-subs, #pane-settings {
+  max-width: 100%;
+}
   </style>
 </head>
 
@@ -874,13 +1016,10 @@ select.input-field option { background: #1C1C28; }
   <header id="appHeader">
     <div class="app-logo">
       <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-        <rect x="2" y="8" width="22" height="14" rx="3.5" stroke="#00E5C0" stroke-width="1.6"/>
-        <rect x="2" y="12" width="22" height="3.5" fill="#00E5C0" opacity="0.12"/>
-        <circle cx="19" cy="15.5" r="3" stroke="#00E5C0" stroke-width="1.3"/>
-        <circle cx="21.5" cy="15.5" r="3" stroke="#00E5C0" stroke-width="1.3" opacity="0.35"/>
-        <path d="M7 6V4M13 5V3" stroke="#00E5C0" stroke-width="1.3" stroke-linecap="round" opacity="0.4"/>
+        <rect width="26" height="26" rx="7" fill="#00E5C0" opacity="0.12"/>
+        <path d="M8 7h10M8 13h7M8 19v-12" stroke="#00E5C0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <span class="app-name">POOL CARD</span>
+      <span class="app-name">FLOAT</span>
     </div>
     <div class="header-right">
       <span class="header-date" id="headerDate"></span>
@@ -1111,7 +1250,7 @@ select.input-field option { background: #1C1C28; }
       </div>
 
       <div style="text-align:center; padding: 12px 0 4px; color: var(--muted); font-size:11px; font-family: var(--mono);">
-        POOL CARD v3.0 · local-first
+        FLOAT v3.0 · local-first
       </div>
 
     </div><!-- /pane-settings -->
@@ -1161,16 +1300,13 @@ select.input-field option { background: #1C1C28; }
   <div class="auth-logo">
     <div class="auth-logo-mark">
       <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
-        <rect x="3" y="10" width="28" height="18" rx="4" stroke="#00E5C0" stroke-width="1.8"/>
-        <rect x="3" y="15" width="28" height="4.5" fill="#00E5C0" opacity="0.12"/>
-        <circle cx="24" cy="20" r="3.5" stroke="#00E5C0" stroke-width="1.5"/>
-        <circle cx="27.5" cy="20" r="3.5" stroke="#00E5C0" stroke-width="1.5" opacity="0.35"/>
-        <path d="M10 8V6M17 7V5" stroke="#00E5C0" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+        <rect width="34" height="34" rx="10" fill="#00E5C0" opacity="0.10"/>
+        <path d="M10 9h14M10 17h9M10 25V9" stroke="#00E5C0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
     <div>
-      <div class="auth-title">POOL CARD</div>
-      <div class="auth-sub">personal finance firewall</div>
+      <div class="auth-title">FLOAT</div>
+      <div class="auth-sub">spend from strength, not stress.</div>
     </div>
   </div>
 
@@ -1379,7 +1515,7 @@ function setAuthMode(mode) {
   authMode = mode;
   const isSignup = mode === 'signup';
   document.getElementById('authModeLabel').textContent    = isSignup ? 'Create account'        : 'Welcome back';
-  document.getElementById('authModeSub').textContent      = isSignup ? 'Set up your Pool Card.' : 'Sign in to access your pool.';
+  document.getElementById('authModeSub').textContent      = isSignup ? 'Set up your Float.' : 'Sign in to access your float.';
   document.getElementById('authSubmitBtn').textContent    = isSignup ? 'Create Account'         : 'Sign In';
   document.getElementById('authToggleText').textContent   = isSignup ? 'Already have an account?' : "Don't have an account?";
   document.getElementById('authToggleBtn').textContent    = isSignup ? 'Sign In'                : 'Sign Up';
@@ -1608,8 +1744,8 @@ function renderSwipes() {
     const i = state.swipes.length - 1 - ri;
     return `<div class="swipe-item">
       <div class="swipe-dot"></div>
-      <div style="flex:1;min-width:0;">
-        <div class="swipe-name">${esc(s.name)}</div>
+      <div class="swipe-info">
+        <span class="swipe-name">${esc(s.name)}</span>
         <div class="swipe-time">${s.time}</div>
       </div>
       <div class="swipe-cost">−$${fmt(s.cost)}</div>
@@ -1685,7 +1821,7 @@ function renderSubs() {
     const emoji = getSubEmoji(sub.name);
     return `<div class="sub-item">
       <div class="sub-icon-wrap">${emoji}</div>
-      <div style="flex:1;min-width:0;">
+      <div class="sub-info">
         <div class="sub-name">${esc(sub.name)}</div>
         <div class="sub-detail">${sub.cycle === 'yearly' ? 'Yearly · $' + fmt(sub.cost / 12) + '/mo equiv.' : 'Monthly'}</div>
         ${badge}
