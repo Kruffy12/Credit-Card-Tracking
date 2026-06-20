@@ -66,9 +66,11 @@
 
 html {
   background: var(--void);
-  /* Lock to exactly the viewport — no rubber-band on html level */
+  /* Lock to exactly the viewport — no rubber-band on html level.
+     100dvh has known WebKit bugs in standalone PWA mode (no browser chrome
+     to dynamically size against), so we rely on 100% through the ancestor
+     chain instead, which is the proven-stable approach for installed PWAs. */
   height: 100%;
-  height: 100dvh;
   overflow: hidden;
   /* Kill callout popups on long-press */
   -webkit-touch-callout: none;
@@ -79,7 +81,6 @@ body {
   color: var(--text);
   background: var(--void);
   height: 100%;
-  height: 100dvh;
   overflow: hidden;                    /* body itself never scrolls */
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
@@ -108,7 +109,6 @@ input, textarea, [contenteditable] {
   display: flex;
   flex-direction: column;
   height: 100%;
-  height: 100dvh;
   overflow: hidden;                    /* shell never scrolls; only panes do */
 }
 
@@ -1357,7 +1357,7 @@ textarea.input-field {
       </div>
 
       <div style="text-align:center; padding: 12px 0 4px; color: var(--muted); font-size:11px; font-family: var(--mono);">
-        FLOAT v3.3 · build 2026-06-19c · local-first
+        FLOAT v3.4 · build 2026-06-20a · local-first
       </div>
 
     </div><!-- /pane-settings -->
