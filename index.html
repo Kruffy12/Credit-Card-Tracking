@@ -53,7 +53,7 @@
   --safe-bot:   env(safe-area-inset-bottom, 0px);
   --safe-l:     env(safe-area-inset-left, 0px);
   --safe-r:     env(safe-area-inset-right, 0px);
-  --tab-h:      64px;
+  --tab-h:      54px;
 }
 
 /* ═══════════════════════════════════════════════
@@ -126,6 +126,13 @@ input, textarea, [contenteditable] {
   display: flex;
   align-items: center;
   gap: 9px;
+}
+.app-logo-img {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  flex-shrink: 0;
+  display: block;
 }
 .app-name {
   font-family: var(--mono);
@@ -800,6 +807,13 @@ select.input-field option { background: #1C1C28; }
   background: var(--card);
   border: 1px solid var(--border2);
   display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.auth-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 .auth-title {
   font-family: var(--mono);
@@ -1015,7 +1029,8 @@ textarea.input-field {
   <!-- ══ APP HEADER ══════════════════════════════════════ -->
   <header id="appHeader">
     <div class="app-logo">
-      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+      <img src="icon.png" alt="" class="app-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" style="display:none;">
         <rect width="26" height="26" rx="7" fill="#00E5C0" opacity="0.12"/>
         <path d="M8 7h10M8 13h7M8 19v-12" stroke="#00E5C0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
@@ -1163,7 +1178,7 @@ textarea.input-field {
           <option value="monthly">Monthly</option>
           <option value="yearly">Yearly</option>
         </select>
-        <input class="input-field" type="date" id="subRenewal" required data-placeholder="Next Renewal Date" style="font-family: var(--sans); color: var(--muted);" onchange="this.style.color = this.value ? 'var(--text)' : 'var(--muted)';" />
+        <input class="input-field" type="date" id="subRenewal" />
         <button class="btn btn-green" id="subAddBtn">Add Subscription</button>
       </div>
 
@@ -1299,7 +1314,8 @@ textarea.input-field {
 <div id="authScreen">
   <div class="auth-logo">
     <div class="auth-logo-mark">
-      <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+      <img src="icon.png" alt="" class="auth-logo-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+      <svg width="34" height="34" viewBox="0 0 34 34" fill="none" style="display:none;">
         <rect width="34" height="34" rx="10" fill="#00E5C0" opacity="0.10"/>
         <path d="M10 9h14M10 17h9M10 25V9" stroke="#00E5C0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
@@ -1462,7 +1478,7 @@ function syncToSupabase() {
           user_id:    sbSession.user.id,
           data:       { loaded: state.loaded, swipes: state.swipes, topupLog: state.topupLog, subs: state.subs, dueDay: state.dueDay },
           updated_at: new Date().toISOString()
-        }, { onConflict: 'key' });
+        }, { onConflict: 'key,user_id' });
       setSyncStatus(error ? 'error' : 'synced');
     } catch(e) { setSyncStatus('error'); }
   }, 1500);
