@@ -245,9 +245,9 @@ input, textarea, [contenteditable] {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--border);
-  padding-bottom: var(--safe-bot);
   display: flex;
-  align-items: flex-start;             /* buttons sit at their own height, not stretched to fill the safe-area gap */
+  /* Total bar height = button row + safe-area gap, both explicit and fixed */
+  height: calc(34px + var(--safe-bot));
 }
 
 .tab-btn {
@@ -257,9 +257,10 @@ input, textarea, [contenteditable] {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  height: var(--tab-h);
-  min-height: 34px;                    /* floor so icon+label always fit with room */
-  padding: 2px 0;
+  /* Fixed, explicit height — independent of parent flex alignment entirely */
+  height: 34px;
+  align-self: flex-start;              /* belt-and-suspenders: pin to top of the bar regardless of parent align-items */
+  margin-top: 0;
   background: none;
   border: none;
   cursor: pointer;
@@ -1356,7 +1357,7 @@ textarea.input-field {
       </div>
 
       <div style="text-align:center; padding: 12px 0 4px; color: var(--muted); font-size:11px; font-family: var(--mono);">
-        FLOAT v3.2 · build 2026-06-19b · local-first
+        FLOAT v3.3 · build 2026-06-19c · local-first
       </div>
 
     </div><!-- /pane-settings -->
