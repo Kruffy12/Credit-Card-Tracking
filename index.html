@@ -53,7 +53,7 @@
   --safe-bot:   env(safe-area-inset-bottom, 0px);
   --safe-l:     env(safe-area-inset-left, 0px);
   --safe-r:     env(safe-area-inset-right, 0px);
-  --tab-h:      42px;
+  --tab-h:      34px;
 }
 
 /* ═══════════════════════════════════════════════
@@ -252,11 +252,11 @@ input, textarea, [contenteditable] {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;           /* push icon+label toward the bottom of the bar */
+  justify-content: center;
   gap: 2px;
   height: var(--tab-h);
-  min-height: 42px;                    /* floor so icon+label always fit with room */
-  padding: 2px 0 6px;                  /* extra bottom padding keeps it off the very edge */
+  min-height: 34px;                    /* floor so icon+label always fit with room */
+  padding: 2px 0;
   background: none;
   border: none;
   cursor: pointer;
@@ -1720,6 +1720,16 @@ function esc(s) {
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+/* Prevents a rapid double-tap from firing the same action twice.
+   Uses a data-attribute lock (not the native disabled attribute) so there's
+   no visible opacity flicker — this is a silent logic guard, not a loading state. */
+function guardTap(btn, ms = 400) {
+  if (btn.dataset.locked === '1') return false;
+  btn.dataset.locked = '1';
+  setTimeout(() => { delete btn.dataset.locked; }, ms);
+  return true;
+}
+
 /* ═══════════════════════════════════════════════
    SMART BANNERS
 ═══════════════════════════════════════════════ */
@@ -2018,7 +2028,8 @@ function renderAll(animate = false) {
 /* ═══════════════════════════════════════════════
    ACTIONS — POOL TAB
 ═══════════════════════════════════════════════ */
-document.getElementById('topupBtn').addEventListener('click', () => {
+document.getElementById('topupBtn').addEventListener('click', (e) => {
+  if (!guardTap(e.currentTarget)) return;
   const raw = parseFloat(document.getElementById('topupAmt').value);
   if (!raw || raw <= 0) { showToast('Enter an amount first'); return; }
   state.loaded += raw;
@@ -2035,7 +2046,8 @@ document.getElementById('topupAmt').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('topupBtn').click();
 });
 
-document.getElementById('swipeBtn').addEventListener('click', () => {
+document.getElementById('swipeBtn').addEventListener('click', (e) => {
+  if (!guardTap(e.currentTarget)) return;
   const nameEl = document.getElementById('swipeName');
   const costEl = document.getElementById('swipeCost');
   const name = nameEl.value.trim();
@@ -2089,7 +2101,8 @@ document.getElementById('settleBtn').addEventListener('click', () => {
 /* ═══════════════════════════════════════════════
    ACTIONS — SUBS TAB
 ═══════════════════════════════════════════════ */
-document.getElementById('subAddBtn').addEventListener('click', () => {
+document.getElementById('subAddBtn').addEventListener('click', (e) => {
+  if (!guardTap(e.currentTarget)) return;
   const name    = document.getElementById('subName').value.trim();
   const cost    = parseFloat(document.getElementById('subCost').value);
   const cycle   = document.getElementById('subCycle').value;
@@ -2269,8 +2282,11 @@ function showOverlay(title, body, confirmCls, confirmLabel, onConfirm) {
 
 document.getElementById('overlayCancelBtn').addEventListener('click', closeOverlay);
 document.getElementById('overlayConfirmBtn').addEventListener('click', () => {
+  if (!overlayCallback) return;        // already handled — ignore the duplicate tap
+  const cb = overlayCallback;
+  overlayCallback = null;
   closeOverlay();
-  if (overlayCallback) { overlayCallback(); overlayCallback = null; }
+  cb();
 });
 document.getElementById('overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('overlay')) closeOverlay();
