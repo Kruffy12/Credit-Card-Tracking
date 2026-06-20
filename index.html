@@ -247,7 +247,7 @@ input, textarea, [contenteditable] {
   border-top: 1px solid var(--border);
   padding-bottom: var(--safe-bot);
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;             /* buttons sit at their own height, not stretched to fill the safe-area gap */
 }
 
 .tab-btn {
@@ -1356,7 +1356,7 @@ textarea.input-field {
       </div>
 
       <div style="text-align:center; padding: 12px 0 4px; color: var(--muted); font-size:11px; font-family: var(--mono);">
-        FLOAT v3.1 · build 2026-06-19 · local-first
+        FLOAT v3.2 · build 2026-06-19b · local-first
       </div>
 
     </div><!-- /pane-settings -->
