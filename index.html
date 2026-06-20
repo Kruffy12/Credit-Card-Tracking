@@ -53,7 +53,7 @@
   --safe-bot:   env(safe-area-inset-bottom, 0px);
   --safe-l:     env(safe-area-inset-left, 0px);
   --safe-r:     env(safe-area-inset-right, 0px);
-  --tab-h:      46px;
+  --tab-h:      50px;
 }
 
 /* ═══════════════════════════════════════════════
@@ -244,6 +244,7 @@ input, textarea, [contenteditable] {
   border-top: 1px solid var(--border);
   padding-bottom: var(--safe-bot);
   display: flex;
+  align-items: stretch;
 }
 
 .tab-btn {
@@ -252,8 +253,10 @@ input, textarea, [contenteditable] {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
   height: var(--tab-h);
+  min-height: 50px;                    /* floor so icon+label always fit with room */
+  padding: 4px 0;
   background: none;
   border: none;
   cursor: pointer;
@@ -264,7 +267,13 @@ input, textarea, [contenteditable] {
   transition: color 0.18s;
   position: relative;
 }
-.tab-btn .tab-icon { transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1); }
+.tab-btn .tab-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1);
+}
 .tab-btn.active { color: var(--teal); }
 .tab-btn.active .tab-icon { transform: translateY(-2px) scale(1.08); }
 .tab-label { font-size: 10px; font-weight: 600; letter-spacing: 0.04em; }
@@ -416,6 +425,14 @@ select.input-field option { background: #1C1C28; }
 }
 .pill-teal  { color: var(--teal);  background: var(--teal-dim);  border: 1px solid var(--teal-mid); }
 .pill-warn  { color: var(--warn);  background: var(--warn-dim);  border: 1px solid var(--warn-mid); }
+.pill-btn {
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.pill-btn:active { opacity: 0.7; transform: scale(0.96); }
 
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
@@ -1283,6 +1300,25 @@ textarea.input-field {
         </div>
       </div>
 
+      <!-- Logs -->
+      <div class="settings-group">
+        <div class="settings-group-title">Logs</div>
+        <div class="setting-row">
+          <div class="setting-label">Top-Up History</div>
+          <div class="setting-sublabel">Clears the pill history shown under Top Up Pool. Does not affect your current pool balance.</div>
+          <div class="setting-input-wrap">
+            <button class="btn btn-ghost btn-sm" id="clearTopupLogBtn" style="width:auto;">Clear Top-Up History</button>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">Swipe History</div>
+          <div class="setting-sublabel">Deletes all logged swipes. This also resets your pending swipes total to $0 — use Settle Bill instead if you actually paid these off.</div>
+          <div class="setting-input-wrap">
+            <button class="btn btn-danger btn-sm" id="clearSwipeLogBtn" style="width:auto;">Clear Swipe History</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Danger Zone -->
       <div class="settings-group">
         <div class="settings-group-title">Danger Zone</div>
@@ -1821,7 +1857,14 @@ function renderSwipes() {
 function renderTopups() {
   const el = document.getElementById('topupHistory');
   el.innerHTML = state.topupLog.slice(-6).reverse()
-    .map(v => `<div class="pill pill-teal">+$${fmt(v)}</div>`).join('');
+    .map(v => `<button type="button" class="pill pill-teal pill-btn" data-repeat-amt="${v}">+$${fmt(v)}</button>`).join('');
+
+  el.querySelectorAll('[data-repeat-amt]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('topupAmt').value = btn.dataset.repeatAmt;
+      document.getElementById('topupAmt').focus();
+    });
+  });
 }
 
 /* ═══════════════════════════════════════════════
@@ -2102,6 +2145,38 @@ document.getElementById('importBtn').addEventListener('click', () => {
   } catch(e) {
     showToast('Invalid snapshot — check the string and retry');
   }
+});
+
+document.getElementById('clearTopupLogBtn').addEventListener('click', () => {
+  if (!state.topupLog.length) { showToast('Top-up history is already empty'); return; }
+  showOverlay(
+    'Clear Top-Up History',
+    `This deletes the <strong>${state.topupLog.length}</strong> recorded top-up${state.topupLog.length !== 1 ? 's' : ''} shown as pills on the Pool tab.<br><br>Your current pool balance is <strong>not affected</strong>.`,
+    'btn-ghost', 'Clear History',
+    () => {
+      state.topupLog = [];
+      save();
+      renderPool(false);
+      showToast('Top-up history cleared');
+    }
+  );
+});
+
+document.getElementById('clearSwipeLogBtn').addEventListener('click', () => {
+  if (!state.swipes.length) { showToast('Swipe history is already empty'); return; }
+  const total = totalSwipes();
+  showOverlay(
+    'Clear Swipe History',
+    `This deletes all <strong>${state.swipes.length}</strong> logged swipe${state.swipes.length !== 1 ? 's' : ''} (totaling <strong>$${fmt(total)}</strong>) without settling them.<br><br>Your pending swipes total will reset to <strong>$0.00</strong> and your pool balance will jump back up by that amount — use <strong>Settle Bill</strong> on the Pool tab instead if you actually paid these off.`,
+    'btn-danger', 'Clear Anyway',
+    () => {
+      state.swipes = [];
+      save();
+      renderAll(true);
+      renderBanners();
+      showToast('Swipe history cleared');
+    }
+  );
 });
 
 document.getElementById('masterResetBtn').addEventListener('click', () => {
