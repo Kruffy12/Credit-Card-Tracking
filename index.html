@@ -80,6 +80,14 @@ body {
   font-family: var(--sans);
   color: var(--text);
   background: var(--void);
+  /* Pin body to the actual window bounds. In standalone iOS PWAs with a
+     non-scrolling root, WKWebView's scroll view can keep applying its own
+     automatic bottom content inset, which shrinks the area position:fixed
+     measures against — independent of any in-page CSS. position:fixed here
+     opts the page out of that native scroll-inset machinery entirely. */
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100%;
   height: 100%;
   overflow: hidden;                    /* body itself never scrolls */
   overscroll-behavior: none;
@@ -1357,7 +1365,7 @@ textarea.input-field {
       </div>
 
       <div style="text-align:center; padding: 12px 0 4px; color: var(--muted); font-size:11px; font-family: var(--mono);">
-        FLOAT v3.4 · build 2026-06-20a · local-first
+        FLOAT v3.5 · build 2026-06-20b · local-first
       </div>
 
     </div><!-- /pane-settings -->
