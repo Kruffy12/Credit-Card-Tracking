@@ -53,7 +53,7 @@
   --safe-bot:   env(safe-area-inset-bottom, 0px);
   --safe-l:     env(safe-area-inset-left, 0px);
   --safe-r:     env(safe-area-inset-right, 0px);
-  --tab-h:      54px;
+  --tab-h:      46px;
 }
 
 /* ═══════════════════════════════════════════════
@@ -786,7 +786,7 @@ select.input-field option { background: #1C1C28; }
   /* Scrollable on very small screens (SE) */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: calc(var(--safe-top) + 24px) 24px calc(var(--safe-bot) + 24px);
+  padding: calc(var(--safe-top) + 20px) 20px calc(var(--safe-bot) + 20px);
   transition: opacity 0.3s ease;
 }
 #authScreen.hidden {
@@ -796,18 +796,22 @@ select.input-field option { background: #1C1C28; }
 
 .auth-logo {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
+  justify-content: center;
   gap: 12px;
-  margin-bottom: 40px;
+  margin-bottom: 28px;
+  width: 100%;
+  max-width: 360px;
 }
 .auth-logo-mark {
-  width: 64px; height: 64px;
-  border-radius: 18px;
+  width: 48px; height: 48px;
+  border-radius: 14px;
   background: var(--card);
   border: 1px solid var(--border2);
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
+  flex-shrink: 0;
 }
 .auth-logo-img {
   width: 100%;
@@ -815,17 +819,26 @@ select.input-field option { background: #1C1C28; }
   object-fit: cover;
   display: block;
 }
+.auth-logo-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
 .auth-title {
   font-family: var(--mono);
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   color: var(--teal);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
 }
 .auth-sub {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--muted);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+  margin-top: 2px;
 }
 
 .auth-card {
@@ -834,7 +847,7 @@ select.input-field option { background: #1C1C28; }
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
-  padding: 24px 22px;
+  padding: 22px 20px;
 }
 
 .auth-mode-label {
@@ -842,11 +855,12 @@ select.input-field option { background: #1C1C28; }
   font-weight: 700;
   color: var(--text);
   margin-bottom: 4px;
+  line-height: 1.3;
 }
 .auth-mode-sub {
   font-size: 12px;
   color: var(--muted);
-  margin-bottom: 20px;
+  margin-bottom: 18px;
   line-height: 1.5;
 }
 
@@ -859,15 +873,32 @@ select.input-field option { background: #1C1C28; }
   padding: 9px 12px;
   margin-bottom: 12px;
   display: none;
-  line-height: 1.4;
+  line-height: 1.45;
+  word-break: break-word;
 }
 .auth-error.show { display: block; }
 
+.auth-field-group {
+  display: flex;
+  flex-direction: column;
+}
+.auth-field-group .input-field {
+  margin-bottom: 10px;
+}
+.auth-field-group .input-field:last-child {
+  margin-bottom: 0;
+}
+
+#authConfirmWrap {
+  margin-top: 10px;
+}
+
 .auth-toggle {
   text-align: center;
-  margin-top: 16px;
+  margin-top: 18px;
   font-size: 13px;
   color: var(--muted);
+  line-height: 1.4;
 }
 .auth-toggle button {
   background: none;
@@ -876,7 +907,7 @@ select.input-field option { background: #1C1C28; }
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  padding: 0 2px;
+  padding: 4px 4px;
   touch-action: manipulation;
 }
 
@@ -1320,7 +1351,7 @@ textarea.input-field {
         <path d="M10 9h14M10 17h9M10 25V9" stroke="#00E5C0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
-    <div>
+    <div class="auth-logo-text">
       <div class="auth-title">FLOAT</div>
       <div class="auth-sub">spend from strength, not stress.</div>
     </div>
@@ -1332,13 +1363,15 @@ textarea.input-field {
 
     <div class="auth-error" id="authError"></div>
 
-    <input class="input-field sans" type="email"    id="authEmail"    placeholder="Email address"   autocomplete="email"     inputmode="email" />
-    <input class="input-field sans" type="password" id="authPassword" placeholder="Password"        autocomplete="current-password" />
+    <div class="auth-field-group">
+      <input class="input-field sans" type="email"    id="authEmail"    placeholder="Email address"   autocomplete="email"     inputmode="email" />
+      <input class="input-field sans" type="password" id="authPassword" placeholder="Password"        autocomplete="current-password" />
+    </div>
     <div id="authConfirmWrap" style="display:none;">
       <input class="input-field sans" type="password" id="authConfirm" placeholder="Confirm password" autocomplete="new-password" />
     </div>
 
-    <button class="btn btn-teal" id="authSubmitBtn" style="margin-top:4px;">Sign In</button>
+    <button class="btn btn-teal" id="authSubmitBtn" style="margin-top:14px;">Sign In</button>
 
     <div class="auth-toggle">
       <span id="authToggleText">Don't have an account?</span>
