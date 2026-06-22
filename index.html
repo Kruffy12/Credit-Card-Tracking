@@ -66,11 +66,9 @@
 
 html {
   background: var(--void);
-  /* Lock to exactly the viewport — no rubber-band on html level.
-     100dvh has known WebKit bugs in standalone PWA mode (no browser chrome
-     to dynamically size against), so we rely on 100% through the ancestor
-     chain instead, which is the proven-stable approach for installed PWAs. */
+  /* Lock to exactly the viewport — no rubber-band on html level */
   height: 100%;
+  height: 100dvh;
   overflow: hidden;
   /* Kill callout popups on long-press */
   -webkit-touch-callout: none;
@@ -80,15 +78,8 @@ body {
   font-family: var(--sans);
   color: var(--text);
   background: var(--void);
-  /* Pin body to the actual window bounds. In standalone iOS PWAs with a
-     non-scrolling root, WKWebView's scroll view can keep applying its own
-     automatic bottom content inset, which shrinks the area position:fixed
-     measures against — independent of any in-page CSS. position:fixed here
-     opts the page out of that native scroll-inset machinery entirely. */
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  width: 100%;
   height: 100%;
+  height: 100dvh;
   overflow: hidden;                    /* body itself never scrolls */
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
@@ -117,6 +108,7 @@ input, textarea, [contenteditable] {
   display: flex;
   flex-direction: column;
   height: 100%;
+  height: 100dvh;
   overflow: hidden;                    /* shell never scrolls; only panes do */
 }
 
@@ -253,9 +245,9 @@ input, textarea, [contenteditable] {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--border);
+  padding-bottom: var(--safe-bot);
   display: flex;
-  /* Total bar height = button row + safe-area gap, both explicit and fixed */
-  height: calc(34px + var(--safe-bot));
+  align-items: flex-start;             /* buttons sit at their own height, not stretched to fill the safe-area gap */
 }
 
 .tab-btn {
@@ -265,10 +257,9 @@ input, textarea, [contenteditable] {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  /* Fixed, explicit height — independent of parent flex alignment entirely */
-  height: 34px;
-  align-self: flex-start;              /* belt-and-suspenders: pin to top of the bar regardless of parent align-items */
-  margin-top: 0;
+  height: var(--tab-h);
+  min-height: 34px;                    /* floor so icon+label always fit with room */
+  padding: 2px 0;
   background: none;
   border: none;
   cursor: pointer;
@@ -1092,6 +1083,151 @@ textarea.input-field {
 #pane-pool, #pane-subs, #pane-settings {
   max-width: 100%;
 }
+
+/* ═══════════════════════════════════════════════
+   QUICK ACTIONS (Pool tab shortcuts)
+═══════════════════════════════════════════════ */
+.quick-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.quick-action-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  transition: transform 0.12s, border-color 0.15s, background 0.15s;
+}
+.quick-action-card:active { transform: scale(0.96); background: var(--card2); }
+.qa-topup:active { border-color: var(--teal-mid); }
+.qa-swipe:active { border-color: var(--warn-mid); }
+.qa-label { font-size: 13px; font-weight: 700; color: var(--text); }
+.qa-sub   { font-size: 11px; color: var(--muted); margin-top: -6px; }
+
+/* ═══════════════════════════════════════════════
+   FLOATING ACTION BUTTON
+═══════════════════════════════════════════════ */
+.fab {
+  position: fixed;
+  right: calc(var(--safe-r) + 16px);
+  bottom: calc(var(--safe-bot) + var(--tab-h) + 18px);
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--teal);
+  border: none;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 18px rgba(0,229,192,0.32), 0 2px 8px rgba(0,0,0,0.35);
+  z-index: 90;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  transition: transform 0.15s ease, box-shadow 0.2s;
+}
+.fab:active { transform: scale(0.9); box-shadow: 0 2px 10px rgba(0,229,192,0.3); }
+
+/* ═══════════════════════════════════════════════
+   QUICK LOG SHEET
+═══════════════════════════════════════════════ */
+.quicklog-sheet {
+  max-height: 86vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(var(--safe-bot) + 20px);
+}
+.quicklog-handle {
+  width: 36px; height: 4px;
+  background: var(--border2);
+  border-radius: 99px;
+  margin: 0 auto 18px;
+}
+.seg-control {
+  display: flex;
+  background: var(--void);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 3px;
+  margin-bottom: 18px;
+}
+.seg-btn {
+  flex: 1;
+  padding: 10px 0;
+  border: none;
+  background: transparent;
+  color: var(--soft);
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.02em;
+  border-radius: 8px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  transition: background 0.2s, color 0.2s;
+}
+.seg-btn.active { background: var(--card2); color: var(--text); }
+
+.amount-display {
+  text-align: center;
+  font-family: var(--mono);
+  font-size: clamp(36px, 11vw, 46px);
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 14px;
+  letter-spacing: -0.02em;
+  transition: color 0.15s;
+}
+.amount-display .cur { font-size: 0.45em; opacity: 0.5; margin-right: 4px; vertical-align: 8%; }
+.amount-display.shake { animation: qlShake 0.3s; }
+.amount-display.flash { color: var(--teal); }
+@keyframes qlShake { 0%,100%{ transform: translateX(0); } 25%{ transform: translateX(-6px); } 75%{ transform: translateX(6px); } }
+
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.chip {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 7px 13px;
+  border-radius: 99px;
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.chip:active { transform: scale(0.95); }
+.chip.active { background: var(--teal-dim); border-color: var(--teal-mid); color: var(--teal); }
+.merchant-chip.active { background: var(--warn-dim); border-color: var(--warn-mid); color: var(--warn); }
+.chip-hint { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+
+.keypad {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin: 14px 0 18px;
+}
+.keypad-key {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 15px 0;
+  font-size: 19px; font-weight: 600;
+  color: var(--text);
+  font-family: var(--mono);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none; user-select: none;
+  transition: background 0.1s, transform 0.08s;
+}
+.keypad-key:active { background: var(--border2); transform: scale(0.95); }
+.keypad-back { color: var(--warn); font-size: 17px; }
   </style>
 </head>
 
@@ -1155,36 +1291,27 @@ textarea.input-field {
         </div>
       </div>
 
-      <!-- Top Up -->
-      <div class="card">
-        <div class="card-label-row">
+      <!-- Quick Actions -->
+      <div class="quick-actions-row">
+        <button class="quick-action-card qa-topup" id="qaTopupBtn" type="button">
           <div class="action-icon icon-teal">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M6 2v8M2 6h8" stroke="#00E5C0" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </div>
-          <span class="eyebrow">Top Up Pool</span>
-        </div>
-        <input class="input-field" type="number" id="topupAmt" placeholder="Amount (BZD)" min="0" step="0.01" inputmode="decimal" />
-        <button class="btn btn-teal" id="topupBtn">Add to Pool</button>
-        <div class="pill-row" id="topupHistory"></div>
-      </div>
-
-      <!-- Log Swipe -->
-      <div class="card">
-        <div class="card-label-row">
+          <div class="qa-label">Top Up Pool</div>
+        </button>
+        <button class="quick-action-card qa-swipe" id="qaSwipeBtn" type="button">
           <div class="action-icon icon-warn">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <rect x="1.5" y="3.5" width="9" height="7" rx="1.5" stroke="#FF6B6B" stroke-width="1.3"/>
               <path d="M4 3.5V2.5a2 2 0 014 0v1" stroke="#FF6B6B" stroke-width="1.3" stroke-linecap="round"/>
             </svg>
           </div>
-          <span class="eyebrow">Log Swipe</span>
-        </div>
-        <input class="input-field sans" type="text"   id="swipeName" placeholder="What did you buy?" autocomplete="off" />
-        <input class="input-field"      type="number" id="swipeCost" placeholder="Cost (BZD)" min="0" step="0.01" inputmode="decimal" />
-        <button class="btn btn-warn" id="swipeBtn">Log Swipe</button>
+          <div class="qa-label">Log Swipe</div>
+        </button>
       </div>
+      <div class="pill-row" id="topupHistory" style="margin-top:2px;"></div>
 
       <!-- Swipe History -->
       <div class="section-head">
@@ -1365,7 +1492,7 @@ textarea.input-field {
       </div>
 
       <div style="text-align:center; padding: 12px 0 4px; color: var(--muted); font-size:11px; font-family: var(--mono);">
-        FLOAT v3.5 · build 2026-06-20b · local-first
+        FLOAT v4.0 · build 2026-06-21a · local-first
       </div>
 
     </div><!-- /pane-settings -->
@@ -1458,6 +1585,52 @@ textarea.input-field {
       <button class="btn btn-ghost" id="overlayCancelBtn">Cancel</button>
       <button class="btn btn-teal"  id="overlayConfirmBtn">Confirm</button>
     </div>
+  </div>
+</div>
+
+<!-- ══ QUICK LOG FAB ═════════════════════════════════════ -->
+<button class="fab" id="quickLogFab" aria-label="Quick log">
+  <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+    <path d="M11 4v14M4 11h14" stroke="#000" stroke-width="2.4" stroke-linecap="round"/>
+  </svg>
+</button>
+
+<!-- ══ QUICK LOG SHEET ═══════════════════════════════════ -->
+<div class="overlay" id="quickLogOverlay">
+  <div class="overlay-sheet quicklog-sheet">
+    <div class="quicklog-handle"></div>
+
+    <div class="seg-control">
+      <button class="seg-btn active" data-mode="swipe" id="segSwipe" type="button">Log Swipe</button>
+      <button class="seg-btn" data-mode="topup" id="segTopup" type="button">Top Up</button>
+    </div>
+
+    <div class="amount-display" id="qlAmountDisplay">
+      <span class="cur">BZD</span><span id="qlAmountNum">0.00</span>
+    </div>
+
+    <div class="chip-row" id="qlMerchantChips"></div>
+    <input class="input-field sans" type="text" id="qlNameInput" placeholder="What was it for? (optional)" autocomplete="off" />
+
+    <div class="chip-row" id="qlTopupChips" style="display:none;"></div>
+
+    <div class="keypad" id="qlKeypad">
+      <button class="keypad-key" data-k="1" type="button">1</button>
+      <button class="keypad-key" data-k="2" type="button">2</button>
+      <button class="keypad-key" data-k="3" type="button">3</button>
+      <button class="keypad-key" data-k="4" type="button">4</button>
+      <button class="keypad-key" data-k="5" type="button">5</button>
+      <button class="keypad-key" data-k="6" type="button">6</button>
+      <button class="keypad-key" data-k="7" type="button">7</button>
+      <button class="keypad-key" data-k="8" type="button">8</button>
+      <button class="keypad-key" data-k="9" type="button">9</button>
+      <button class="keypad-key" data-k="00" type="button">00</button>
+      <button class="keypad-key" data-k="0" type="button">0</button>
+      <button class="keypad-key keypad-back" data-k="back" type="button" aria-label="Backspace">⌫</button>
+    </div>
+
+    <button class="btn btn-warn" id="qlConfirmBtn" type="button">Log Swipe</button>
+    <button class="btn btn-ghost" id="qlCancelBtn" type="button" style="margin-top:8px;">Cancel</button>
   </div>
 </div>
 
@@ -1618,6 +1791,7 @@ function showAuthScreen() {
   scr.classList.remove('hidden');
   document.getElementById('appShell').style.visibility = 'hidden';
   document.getElementById('signOutBtn').style.display  = 'none';
+  document.getElementById('quickLogFab').style.display = 'none';
   setAuthMode('signin');
 }
 
@@ -1625,6 +1799,7 @@ function showApp() {
   document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('appShell').style.visibility = 'visible';
   document.getElementById('signOutBtn').style.display  = 'block';
+  document.getElementById('quickLogFab').style.display = 'flex';
   setSyncStatus('synced');
   pullRemoteState();
 }
@@ -1904,8 +2079,7 @@ function renderTopups() {
 
   el.querySelectorAll('[data-repeat-amt]').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.getElementById('topupAmt').value = btn.dataset.repeatAmt;
-      document.getElementById('topupAmt').focus();
+      qlOpen('topup', parseFloat(btn.dataset.repeatAmt));
     });
   });
 }
@@ -2038,57 +2212,152 @@ function renderAll(animate = false) {
 }
 
 /* ═══════════════════════════════════════════════
-   ACTIONS — POOL TAB
+   ACTIONS — POOL TAB (quick-action shortcuts)
 ═══════════════════════════════════════════════ */
-document.getElementById('topupBtn').addEventListener('click', (e) => {
-  if (!guardTap(e.currentTarget)) return;
-  const raw = parseFloat(document.getElementById('topupAmt').value);
-  if (!raw || raw <= 0) { showToast('Enter an amount first'); return; }
-  state.loaded += raw;
-  state.topupLog.push(raw);
-  if (state.topupLog.length > 12) state.topupLog.shift();
-  save();
-  document.getElementById('topupAmt').value = '';
-  renderPool(true);
-  renderBanners();
-  showToast(`+$${fmt(raw)} added to pool`);
+document.getElementById('qaTopupBtn').addEventListener('click', () => qlOpen('topup'));
+document.getElementById('qaSwipeBtn').addEventListener('click', () => qlOpen('swipe'));
+document.getElementById('quickLogFab').addEventListener('click', () => qlOpen('swipe'));
+
+/* ═══════════════════════════════════════════════
+   QUICK LOG SHEET — zero-friction amount entry
+   Calculator-style cent buffer + recent-merchant chips
+   + recent top-up chips. One sheet, reachable from
+   the FAB on every tab or the Pool tab shortcuts.
+═══════════════════════════════════════════════ */
+let qlMode  = 'swipe';   // 'swipe' | 'topup'
+let qlCents = 0;
+const QL_MAX_CENTS = 99999999; // sanity cap: $999,999.99
+
+function qlOpen(mode, prefillAmt) {
+  qlMode  = mode;
+  qlCents = prefillAmt ? Math.round(prefillAmt * 100) : 0;
+  document.getElementById('qlNameInput').value = '';
+  qlSetMode(mode);
+  qlRenderAmount();
+  qlRenderMerchantChips();
+  qlRenderTopupChips();
+  document.getElementById('quickLogOverlay').classList.add('show');
+  if (!prefillAmt) {
+    // Give the keypad focus context without popping the native keyboard
+    document.activeElement && document.activeElement.blur && document.activeElement.blur();
+  }
+}
+
+function qlClose() {
+  document.getElementById('quickLogOverlay').classList.remove('show');
+}
+
+function qlSetMode(mode) {
+  qlMode = mode;
+  document.getElementById('segSwipe').classList.toggle('active', mode === 'swipe');
+  document.getElementById('segTopup').classList.toggle('active', mode === 'topup');
+  document.getElementById('qlNameInput').style.display     = mode === 'swipe' ? 'block' : 'none';
+  document.getElementById('qlMerchantChips').style.display = mode === 'swipe' ? 'flex'  : 'none';
+  document.getElementById('qlTopupChips').style.display    = mode === 'topup' ? 'flex'  : 'none';
+  const confirmBtn = document.getElementById('qlConfirmBtn');
+  confirmBtn.textContent = mode === 'swipe' ? 'Log Swipe' : 'Add to Pool';
+  confirmBtn.className   = 'btn ' + (mode === 'swipe' ? 'btn-warn' : 'btn-teal');
+}
+
+document.getElementById('segSwipe').addEventListener('click', () => qlSetMode('swipe'));
+document.getElementById('segTopup').addEventListener('click', () => qlSetMode('topup'));
+document.getElementById('qlCancelBtn').addEventListener('click', qlClose);
+document.getElementById('quickLogOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('quickLogOverlay')) qlClose();
 });
 
-document.getElementById('topupAmt').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('topupBtn').click();
-});
+function qlRenderAmount() {
+  document.getElementById('qlAmountNum').textContent = (qlCents / 100).toFixed(2);
+}
 
-document.getElementById('swipeBtn').addEventListener('click', (e) => {
-  if (!guardTap(e.currentTarget)) return;
-  const nameEl = document.getElementById('swipeName');
-  const costEl = document.getElementById('swipeCost');
-  const name = nameEl.value.trim();
-  const cost = parseFloat(costEl.value);
-  if (!name)          { showToast('Add a name for the swipe'); return; }
-  if (!cost || cost <= 0) { showToast('Enter a valid amount'); return; }
-
-  state.swipes.push({
-    name, cost, id: Date.now(),
-    time: new Date().toLocaleString('en-US', {
-      month: 'short', day: 'numeric',
-      hour: '2-digit', minute: '2-digit'
-    })
+document.querySelectorAll('.keypad-key').forEach(key => {
+  key.addEventListener('click', () => {
+    const k = key.dataset.k;
+    if (k === 'back') {
+      qlCents = Math.floor(qlCents / 10);
+    } else if (k === '00') {
+      qlCents = Math.min(qlCents * 100, QL_MAX_CENTS);
+    } else {
+      qlCents = Math.min(qlCents * 10 + parseInt(k, 10), QL_MAX_CENTS);
+    }
+    qlRenderAmount();
   });
-  save();
-  nameEl.value = '';
-  costEl.value = '';
-  renderPool(true);
-  renderBanners();
-  showToast(`−$${fmt(cost)} logged`);
-  // Keyboard loop: keep keyboard open, cursor back to name field
-  setTimeout(() => nameEl.focus(), 50);
 });
 
-document.getElementById('swipeName').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('swipeCost').focus();
-});
-document.getElementById('swipeCost').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('swipeBtn').click();
+/* Recent/frequent merchants — derived live from swipe history, no extra state needed */
+function qlFrequentMerchants() {
+  const counts = {};
+  state.swipes.forEach(s => { counts[s.name] = (counts[s.name] || 0) + 1; });
+  return Object.keys(counts).sort((a, b) => counts[b] - counts[a]).slice(0, 6);
+}
+
+function qlRenderMerchantChips() {
+  const wrap  = document.getElementById('qlMerchantChips');
+  const names = qlFrequentMerchants();
+  if (!names.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = names.map(n =>
+    `<button type="button" class="chip merchant-chip" data-name="${esc(n)}">${esc(n)}</button>`
+  ).join('');
+  wrap.querySelectorAll('.merchant-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const nameEl = document.getElementById('qlNameInput');
+      nameEl.value = btn.dataset.name;
+      wrap.querySelectorAll('.merchant-chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+}
+
+function qlRenderTopupChips() {
+  const wrap = document.getElementById('qlTopupChips');
+  const amounts = [...new Set(state.topupLog.slice(-8).map(v => v))].reverse().slice(0, 6);
+  if (!amounts.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = amounts.map(v =>
+    `<button type="button" class="chip" data-amt="${v}">$${fmt(v)}</button>`
+  ).join('');
+  wrap.querySelectorAll('[data-amt]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      qlCents = Math.min(Math.round(parseFloat(btn.dataset.amt) * 100), QL_MAX_CENTS);
+      qlRenderAmount();
+      wrap.querySelectorAll('[data-amt]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+}
+
+document.getElementById('qlConfirmBtn').addEventListener('click', (e) => {
+  if (!guardTap(e.currentTarget)) return;
+  const amt = qlCents / 100;
+  if (!amt || amt <= 0) {
+    showToast('Enter an amount first');
+    const disp = document.getElementById('qlAmountDisplay');
+    disp.classList.remove('shake'); void disp.offsetWidth; disp.classList.add('shake');
+    return;
+  }
+
+  if (qlMode === 'swipe') {
+    const name = document.getElementById('qlNameInput').value.trim() || 'Misc';
+    state.swipes.push({
+      name, cost: amt, id: Date.now(),
+      time: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    });
+    save();
+    renderPool(true);
+    renderBanners();
+    showToast(`−$${fmt(amt)} logged`);
+  } else {
+    state.loaded += amt;
+    state.topupLog.push(amt);
+    if (state.topupLog.length > 12) state.topupLog.shift();
+    save();
+    renderPool(true);
+    renderBanners();
+    showToast(`+$${fmt(amt)} added to pool`);
+  }
+
+  const disp = document.getElementById('qlAmountDisplay');
+  disp.style.color = qlMode === 'swipe' ? 'var(--warn)' : 'var(--teal)';
+  setTimeout(() => { disp.style.color = ''; qlClose(); }, 280);
 });
 
 // Settle
