@@ -235,6 +235,7 @@ input, textarea, [contenteditable] {
   transform: translateX(0);
 }
 
+
 /* ── Bottom Tab Bar ── */
 #tabBar {
   position: fixed;
@@ -245,23 +246,20 @@ input, textarea, [contenteditable] {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--border);
-  /* Uses safe area padding at the very bottom, keeping everything compact */
   padding-bottom: var(--safe-bot); 
   display: flex;
-  align-items: flex-end; /* Pushes the buttons to the bottom */
+  align-items: center;      /* Centers everything vertically */
   justify-content: space-around;
-  height: calc(44px + var(--safe-bot)); /* Reduced overall height to a tight 44px + safe area */
+  height: calc(42px + var(--safe-bot)); /* Kept it tight at 42px */
 }
 
 .tab-btn {
   flex: 1;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end; /* Keeps items pushed downward */
-  gap: 2px;                  /* Minimal gap between icon and text */
-  height: 44px;              /* Explicit button action matching bar size */
-  padding-bottom: 3px;       /* Fine-tunes how close icons get to the bottom edge */
+  flex-direction: column;   /* Stacks icon over text */
+  align-items: center;      /* Centers horizontally */
+  justify-content: center;  /* Centers vertically */
+  height: 42px;
   background: none;
   border: none;
   cursor: pointer;
@@ -278,23 +276,37 @@ input, textarea, [contenteditable] {
   align-items: center;
   justify-content: center;
   line-height: 0;
-  transform: scale(0.92); /* Slightly scaled down to fit the tight layout neatly */
+  transform: scale(1.1);    /* Keeps the icons enlarged */
+  transition: transform 0.15s ease;
+}
+
+.tab-btn .tab-icon svg {
+  width: 20px;
+  height: 20px;
 }
 
 .tab-btn.active { 
   color: var(--teal); 
 }
 
+.tab-btn.active .tab-icon {
+  transform: scale(1.15); 
+}
+
+/* Brought the labels back and tucked them closer to the icon */
 .tab-label { 
-  font-size: 9px; /* Tightly adjusted for micro-typography */
+  display: block; 
+  font-size: 9px; 
   font-weight: 600; 
   letter-spacing: 0.02em; 
+  margin-top: -1px;         /* Pulls the text up slightly so it doesn't overflow the navbar */
+  opacity: 0.8;
 }
 
 .tab-pip {
   position: absolute;
-  top: 4px;
-  right: calc(50% - 12px);
+  top: 3px;
+  right: calc(50% - 13px);
   width: 4px; 
   height: 4px;
   border-radius: 50%;
@@ -1132,12 +1144,12 @@ textarea.input-field {
 ═══════════════════════════════════════════════ */
 .fab {
   position: fixed;
-  /* Hovering cleanly just right above the new condensed tab bar */
-  bottom: calc(54px + var(--safe-bot)); 
+  /* Lowered slightly to match the new 38px navbar height */
+  bottom: calc(48px + var(--safe-bot)); 
   right: 16px;
   z-index: 101;
-  width: 46px;
-  height: 46px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: var(--teal);
   color: #000;
