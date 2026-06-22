@@ -56,7 +56,7 @@
   --safe-bot:   env(safe-area-inset-bottom, 0px);
   --safe-l:     env(safe-area-inset-left, 0px);
   --safe-r:     env(safe-area-inset-right, 0px);
-  --tab-h:      34px;
+  --tab-h:      36px;
 }
 
 /* ═══════════════════════════════════════════════
@@ -250,7 +250,7 @@ input, textarea, [contenteditable] {
   display: flex;
   align-items: center;      /* Centers everything vertically */
   justify-content: space-around;
-  height: calc(42px + var(--safe-bot)); /* Kept it tight at 42px */
+  height: calc(var(--tab-h) + var(--safe-bot));
 }
 
 .tab-btn {
@@ -259,7 +259,7 @@ input, textarea, [contenteditable] {
   flex-direction: column;   /* Stacks icon over text */
   align-items: center;      /* Centers horizontally */
   justify-content: center;  /* Centers vertically */
-  height: 42px;
+  height: var(--tab-h);
   background: none;
   border: none;
   cursor: pointer;
@@ -276,13 +276,13 @@ input, textarea, [contenteditable] {
   align-items: center;
   justify-content: center;
   line-height: 0;
-  transform: scale(1.1);    /* Keeps the icons enlarged */
+  transform: scale(1.05);    /* Keeps the icons enlarged */
   transition: transform 0.15s ease;
 }
 
 .tab-btn .tab-icon svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
 }
 
 .tab-btn.active { 
@@ -290,7 +290,7 @@ input, textarea, [contenteditable] {
 }
 
 .tab-btn.active .tab-icon {
-  transform: scale(1.15); 
+  transform: scale(1.1); 
 }
 
 /* Brought the labels back and tucked them closer to the icon */
@@ -1144,8 +1144,8 @@ textarea.input-field {
 ═══════════════════════════════════════════════ */
 .fab {
   position: fixed;
-  /* Lowered slightly to match the new 38px navbar height */
-  bottom: calc(48px + var(--safe-bot)); 
+  /* Sits ~8px above the 36px tab bar */
+  bottom: calc(44px + var(--safe-bot)); 
   right: 16px;
   z-index: 101;
   width: 44px;
@@ -1208,6 +1208,24 @@ textarea.input-field {
   transition: background 0.2s, color 0.2s;
 }
 .seg-btn.active { background: var(--card2); color: var(--text); }
+
+#qlCurToggle {
+  max-width: 160px;
+  margin: 0 auto 16px;
+  padding: 2px;
+}
+#qlCurToggle .seg-btn { padding: 6px 0; font-size: 11px; }
+
+.ql-fx-total {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--soft);
+  text-align: center;
+  margin-top: 10px;
+  margin-bottom: 4px;
+}
+.ql-fx-total b { color: var(--text); font-weight: 700; }
+
 
 .amount-display {
   text-align: center;
@@ -1451,6 +1469,19 @@ textarea.input-field {
         </div>
       </div>
 
+      <!-- Currency Settings -->
+      <div class="settings-group">
+        <div class="settings-group-title">Currency</div>
+        <div class="setting-row">
+          <div class="setting-label">Default Exchange Rate</div>
+          <div class="setting-sublabel">BZD per 1 USD. Used to pre-fill USD swipes — you can still override it per swipe.</div>
+          <div class="setting-input-wrap">
+            <input class="input-field" type="number" id="settingsFxRate" placeholder="2.00" min="0" step="0.0001" inputmode="decimal" style="margin-bottom:6px;" />
+            <button class="btn btn-ghost btn-sm" id="saveFxRateBtn" style="width:auto;">Save Rate</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Cloud Sync -->
       <div class="settings-group">
         <div class="settings-group-title">Cloud Sync (Supabase)</div>
@@ -1528,7 +1559,7 @@ textarea.input-field {
       </div>
 
       <div style="text-align:center; padding: 12px 0 4px; color: var(--muted); font-size:11px; font-family: var(--mono);">
-        FLOAT v4.0 · build 2026-06-21a · local-first
+        FLOAT v4.2 · build 2026-06-22b · local-first
       </div>
 
     </div><!-- /pane-settings -->
@@ -1642,13 +1673,26 @@ textarea.input-field {
     </div>
 
     <div class="amount-display" id="qlAmountDisplay">
-      <span class="cur">BZD</span><span id="qlAmountNum">0.00</span>
+      <span class="cur" id="qlCurLabel">BZD</span><span id="qlAmountNum">0.00</span>
+    </div>
+
+    <div class="seg-control" id="qlCurToggle">
+      <button class="seg-btn active" data-cur="BZD" id="curBZD" type="button">BZD</button>
+      <button class="seg-btn" data-cur="USD" id="curUSD" type="button">USD</button>
     </div>
 
     <div class="chip-row" id="qlMerchantChips"></div>
     <input class="input-field sans" type="text" id="qlNameInput" placeholder="What was it for? (optional)" autocomplete="off" />
 
     <div class="chip-row" id="qlTopupChips" style="display:none;"></div>
+
+    <div id="qlUsdFields" style="display:none;">
+      <label class="field-label" for="qlFxRate">Exchange Rate (BZD per $1 USD)</label>
+      <input class="input-field" type="number" id="qlFxRate" step="0.0001" min="0" inputmode="decimal" />
+      <label class="field-label" for="qlFeeAmt" style="margin-top:8px;">Bank Exchange Fee (BZD)</label>
+      <input class="input-field" type="number" id="qlFeeAmt" placeholder="0.00" min="0" step="0.01" inputmode="decimal" />
+      <div class="ql-fx-total" id="qlFxTotal"></div>
+    </div>
 
     <div class="keypad" id="qlKeypad">
       <button class="keypad-key" data-k="1" type="button">1</button>
@@ -1695,9 +1739,11 @@ let state = LS.get('poolcard_v3') || {
   topupLog:  [],
   subs:      [],
   dueDay:    null,          // statement due day (1-31)
+  fxRate:    2.00,          // default BZD-per-USD exchange rate, editable in Settings
   supabaseUrl: '',
   supabaseKey: '',
 };
+if (!state.fxRate) state.fxRate = 2.00; // backfill for states saved before currency support
 
 // One-time migration from v2
 (function migrate() {
@@ -1787,7 +1833,7 @@ function syncToSupabase() {
         .upsert({
           key:        'pool_state',
           user_id:    sbSession.user.id,
-          data:       { loaded: state.loaded, swipes: state.swipes, topupLog: state.topupLog, subs: state.subs, dueDay: state.dueDay },
+          data:       { loaded: state.loaded, swipes: state.swipes, topupLog: state.topupLog, subs: state.subs, dueDay: state.dueDay, fxRate: state.fxRate },
           updated_at: new Date().toISOString()
         }, { onConflict: 'key,user_id' });
       setSyncStatus(error ? 'error' : 'synced');
@@ -2085,7 +2131,7 @@ function renderSwipes() {
       <div class="swipe-dot"></div>
       <div class="swipe-info">
         <span class="swipe-name">${esc(s.name)}</span>
-        <div class="swipe-time">${s.time}</div>
+        <div class="swipe-time">${s.time}${s.currency === 'USD' ? ` · $${fmt(s.fxAmount)} USD @ ${s.fxRate.toFixed(4)}${s.fee ? ` + $${fmt(s.fee)} fee` : ''}` : ''}</div>
       </div>
       <div class="swipe-cost">−$${fmt(s.cost)}</div>
       <button class="icon-btn" data-idx="${i}" aria-label="Remove swipe">
@@ -2227,6 +2273,7 @@ function renderSettings() {
   if (state.dueDay) {
     document.getElementById('settingsDueDay').value = state.dueDay;
   }
+  document.getElementById('settingsFxRate').value = state.fxRate || 2.00;
   if (state.supabaseUrl) {
     document.getElementById('settingsSupabaseUrl').value = state.supabaseUrl;
   }
@@ -2261,6 +2308,7 @@ document.getElementById('quickLogFab').addEventListener('click', () => qlOpen('s
    the FAB on every tab or the Pool tab shortcuts.
 ═══════════════════════════════════════════════ */
 let qlMode  = 'swipe';   // 'swipe' | 'topup'
+let qlCurrency = 'BZD';  // 'BZD' | 'USD' — swipes only; top-ups stay BZD
 let qlCents = 0;
 const QL_MAX_CENTS = 99999999; // sanity cap: $999,999.99
 
@@ -2268,7 +2316,10 @@ function qlOpen(mode, prefillAmt) {
   qlMode  = mode;
   qlCents = prefillAmt ? Math.round(prefillAmt * 100) : 0;
   document.getElementById('qlNameInput').value = '';
+  document.getElementById('qlFeeAmt').value = '';
+  document.getElementById('qlFxRate').value = state.fxRate || 2.00;
   qlSetMode(mode);
+  qlSetCurrency('BZD');
   qlRenderAmount();
   qlRenderMerchantChips();
   qlRenderTopupChips();
@@ -2290,13 +2341,31 @@ function qlSetMode(mode) {
   document.getElementById('qlNameInput').style.display     = mode === 'swipe' ? 'block' : 'none';
   document.getElementById('qlMerchantChips').style.display = mode === 'swipe' ? 'flex'  : 'none';
   document.getElementById('qlTopupChips').style.display    = mode === 'topup' ? 'flex'  : 'none';
+  document.getElementById('qlCurToggle').style.display      = mode === 'swipe' ? 'flex'  : 'none';
+  if (mode === 'topup') qlSetCurrency('BZD'); // pool top-ups are always BZD cash
   const confirmBtn = document.getElementById('qlConfirmBtn');
   confirmBtn.textContent = mode === 'swipe' ? 'Log Swipe' : 'Add to Pool';
   confirmBtn.className   = 'btn ' + (mode === 'swipe' ? 'btn-warn' : 'btn-teal');
 }
 
+function qlSetCurrency(cur) {
+  qlCurrency = cur;
+  document.getElementById('curBZD').classList.toggle('active', cur === 'BZD');
+  document.getElementById('curUSD').classList.toggle('active', cur === 'USD');
+  document.getElementById('qlCurLabel').textContent = cur;
+  document.getElementById('qlUsdFields').style.display = cur === 'USD' ? 'block' : 'none';
+  if (cur === 'USD' && !document.getElementById('qlFxRate').value) {
+    document.getElementById('qlFxRate').value = state.fxRate || 2.00;
+  }
+  qlRenderFxTotal();
+}
+
 document.getElementById('segSwipe').addEventListener('click', () => qlSetMode('swipe'));
 document.getElementById('segTopup').addEventListener('click', () => qlSetMode('topup'));
+document.getElementById('curBZD').addEventListener('click', () => qlSetCurrency('BZD'));
+document.getElementById('curUSD').addEventListener('click', () => qlSetCurrency('USD'));
+document.getElementById('qlFxRate').addEventListener('input', qlRenderFxTotal);
+document.getElementById('qlFeeAmt').addEventListener('input', qlRenderFxTotal);
 document.getElementById('qlCancelBtn').addEventListener('click', qlClose);
 document.getElementById('quickLogOverlay').addEventListener('click', e => {
   if (e.target === document.getElementById('quickLogOverlay')) qlClose();
@@ -2304,6 +2373,18 @@ document.getElementById('quickLogOverlay').addEventListener('click', e => {
 
 function qlRenderAmount() {
   document.getElementById('qlAmountNum').textContent = (qlCents / 100).toFixed(2);
+  qlRenderFxTotal();
+}
+
+function qlRenderFxTotal() {
+  const totalEl = document.getElementById('qlFxTotal');
+  if (qlCurrency !== 'USD') { totalEl.textContent = ''; return; }
+  const usdAmt = qlCents / 100;
+  const rate   = parseFloat(document.getElementById('qlFxRate').value) || 0;
+  const fee    = parseFloat(document.getElementById('qlFeeAmt').value) || 0;
+  if (!usdAmt || !rate) { totalEl.textContent = 'Enter the USD amount and rate above'; return; }
+  const total = usdAmt * rate + fee;
+  totalEl.innerHTML = `= <b>$${fmt(total)} BZD</b> deducted from pool${fee ? ` (incl. $${fmt(fee)} fee)` : ''}`;
 }
 
 document.querySelectorAll('.keypad-key').forEach(key => {
@@ -2373,14 +2454,35 @@ document.getElementById('qlConfirmBtn').addEventListener('click', (e) => {
 
   if (qlMode === 'swipe') {
     const name = document.getElementById('qlNameInput').value.trim() || 'Misc';
-    state.swipes.push({
-      name, cost: amt, id: Date.now(),
-      time: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-    });
-    save();
-    renderPool(true);
-    renderBanners();
-    showToast(`−$${fmt(amt)} logged`);
+
+    if (qlCurrency === 'USD') {
+      const rate = parseFloat(document.getElementById('qlFxRate').value) || 0;
+      const fee  = parseFloat(document.getElementById('qlFeeAmt').value) || 0;
+      if (!rate || rate <= 0) {
+        showToast('Enter an exchange rate first');
+        const disp = document.getElementById('qlAmountDisplay');
+        disp.classList.remove('shake'); void disp.offsetWidth; disp.classList.add('shake');
+        return;
+      }
+      const totalBZD = Math.round((amt * rate + fee) * 100) / 100;
+      state.swipes.push({
+        name, cost: totalBZD, currency: 'USD', fxAmount: amt, fxRate: rate, fee, id: Date.now(),
+        time: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+      });
+      save();
+      renderPool(true);
+      renderBanners();
+      showToast(`−$${fmt(totalBZD)} BZD logged ($${fmt(amt)} USD)`);
+    } else {
+      state.swipes.push({
+        name, cost: amt, currency: 'BZD', id: Date.now(),
+        time: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+      });
+      save();
+      renderPool(true);
+      renderBanners();
+      showToast(`−$${fmt(amt)} logged`);
+    }
   } else {
     state.loaded += amt;
     state.topupLog.push(amt);
@@ -2449,6 +2551,14 @@ document.getElementById('saveDueDayBtn').addEventListener('click', () => {
   save();
   renderBanners();
   showToast(`Statement due day set to the ${v}${ordinal(v)}`);
+});
+
+document.getElementById('saveFxRateBtn').addEventListener('click', () => {
+  const v = parseFloat(document.getElementById('settingsFxRate').value);
+  if (!v || v <= 0) { showToast('Enter a rate greater than 0'); return; }
+  state.fxRate = v;
+  save();
+  showToast(`Default rate set to ${v.toFixed(4)} BZD per $1 USD`);
 });
 
 document.getElementById('saveSupabaseBtn').addEventListener('click', () => {
@@ -2581,6 +2691,42 @@ function switchTab(tab) {
 
   if (tab === 'settings') renderSettings();
 }
+
+/* ── Swipe-to-switch: touchstart/touchend only, no live drag-follow.
+   Reuses switchTab()'s existing crossfade — no layout changes. ── */
+const tabOrder = ['pool', 'subs', 'settings'];
+let tsX = 0, tsY = 0, tsTime = 0;
+const tabViewportEl = document.getElementById('tabViewport');
+
+tabViewportEl.addEventListener('touchstart', (e) => {
+  if (document.querySelector('.overlay.show')) return; // ignore behind open sheets/modals
+  const t = e.touches[0];
+  tsX = t.clientX; tsY = t.clientY; tsTime = Date.now();
+}, { passive: true });
+
+tabViewportEl.addEventListener('touchend', (e) => {
+  if (!tsTime) return;
+  if (document.querySelector('.overlay.show')) { tsTime = 0; return; }
+  const t  = e.changedTouches[0];
+  const dx = t.clientX - tsX;
+  const dy = t.clientY - tsY;
+  const dt = Date.now() - tsTime;
+  tsTime = 0;
+
+  const SWIPE_MIN_PX   = 60;   // minimum horizontal travel
+  const SWIPE_RATIO     = 1.5; // must be mostly horizontal, not a vertical scroll
+  const SWIPE_MAX_MS   = 600;  // ignore slow drags
+
+  const absDx = Math.abs(dx), absDy = Math.abs(dy);
+  if (absDx < SWIPE_MIN_PX || absDx < absDy * SWIPE_RATIO || dt > SWIPE_MAX_MS) return;
+
+  const idx = tabOrder.indexOf(currentTab);
+  if (dx < 0 && idx < tabOrder.length - 1) {
+    switchTab(tabOrder[idx + 1]); // swipe left → next tab
+  } else if (dx > 0 && idx > 0) {
+    switchTab(tabOrder[idx - 1]); // swipe right → previous tab
+  }
+}, { passive: true });
 
 /* ═══════════════════════════════════════════════
    OVERLAY ENGINE
