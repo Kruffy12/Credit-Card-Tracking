@@ -236,7 +236,6 @@ input, textarea, [contenteditable] {
 }
 
 /* ── Bottom Tab Bar ── */
-/* ── Bottom Tab Bar ── */
 #tabBar {
   position: fixed;
   bottom: 0;
@@ -246,12 +245,12 @@ input, textarea, [contenteditable] {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--border);
-  /* Use safe-area inset cleanly alongside standard padding */
-  padding-bottom: calc(var(--safe-bot) + 4px);
+  /* Uses safe area padding at the very bottom, keeping everything compact */
+  padding-bottom: var(--safe-bot); 
   display: flex;
-  align-items: center;
+  align-items: flex-end; /* Pushes the buttons to the bottom */
   justify-content: space-around;
-  height: calc(52px + var(--safe-bot));
+  height: calc(44px + var(--safe-bot)); /* Reduced overall height to a tight 44px + safe area */
 }
 
 .tab-btn {
@@ -259,10 +258,10 @@ input, textarea, [contenteditable] {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  height: 100%;
-  padding: 6px 0;
+  justify-content: flex-end; /* Keeps items pushed downward */
+  gap: 2px;                  /* Minimal gap between icon and text */
+  height: 44px;              /* Explicit button action matching bar size */
+  padding-bottom: 3px;       /* Fine-tunes how close icons get to the bottom edge */
   background: none;
   border: none;
   cursor: pointer;
@@ -270,7 +269,7 @@ input, textarea, [contenteditable] {
   touch-action: manipulation;
   -webkit-user-select: none;
   user-select: none;
-  transition: color 0.18s;
+  transition: color 0.15s;
   position: relative;
 }
 
@@ -279,29 +278,25 @@ input, textarea, [contenteditable] {
   align-items: center;
   justify-content: center;
   line-height: 0;
-  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform: scale(0.92); /* Slightly scaled down to fit the tight layout neatly */
 }
 
 .tab-btn.active { 
   color: var(--teal); 
 }
 
-.tab-btn.active .tab-icon { 
-  transform: translateY(-1px) scale(1.05); 
-}
-
 .tab-label { 
-  font-size: 10px; 
+  font-size: 9px; /* Tightly adjusted for micro-typography */
   font-weight: 600; 
-  letter-spacing: 0.04em; 
+  letter-spacing: 0.02em; 
 }
 
 .tab-pip {
   position: absolute;
-  top: 6px;
-  right: calc(50% - 14px); /* Shifts dot dynamically next to the icon center */
-  width: 5px; 
-  height: 5px;
+  top: 4px;
+  right: calc(50% - 12px);
+  width: 4px; 
+  height: 4px;
   border-radius: 50%;
   background: var(--warn);
   opacity: 0;
@@ -1137,22 +1132,32 @@ textarea.input-field {
 ═══════════════════════════════════════════════ */
 .fab {
   position: fixed;
-  right: calc(var(--safe-r) + 16px);
-  bottom: calc(var(--safe-bot) + var(--tab-h) + 18px);
-  width: 56px; height: 56px;
+  /* Hovering cleanly just right above the new condensed tab bar */
+  bottom: calc(54px + var(--safe-bot)); 
+  right: 16px;
+  z-index: 101;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   background: var(--teal);
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 242, 254, 0.25);
   border: none;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 6px 18px rgba(0,229,192,0.32), 0 2px 8px rgba(0,0,0,0.35);
-  z-index: 90;
   cursor: pointer;
-  touch-action: manipulation;
-  -webkit-user-select: none; user-select: none;
-  transition: transform 0.15s ease, box-shadow 0.2s;
+  transition: transform 0.2s, background 0.2s;
 }
-.fab:active { transform: scale(0.9); box-shadow: 0 2px 10px rgba(0,229,192,0.3); }
 
+.fab:active {
+  transform: scale(0.92);
+}
+
+.fab svg {
+  width: 20px;
+  height: 20px;
+}
 /* ═══════════════════════════════════════════════
    QUICK LOG SHEET
 ═══════════════════════════════════════════════ */
